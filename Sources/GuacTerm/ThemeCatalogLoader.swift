@@ -56,9 +56,30 @@ enum ThemeCatalogLoader {
             return []
         }
 
+        let data: Data
+        do {
+            data = try Data(contentsOf: url)
+        } catch {
+            NSLog(
+                "GuacTerm: could not read %@.%@ (%@); offering only the built-in themes.",
+                resourceName, resourceExtension, String(describing: error)
+            )
+            return []
+        }
+
+        return themes(from: data)
+    }
+
+    /// The decoding half of ``load()``, given the bytes rather than the bundle.
+    ///
+    /// Separated because the file it normally reads only exists inside a built
+    /// app, and the interesting cases here are the damaged ones: a truncated
+    /// resource, a scheme missing a colour, two schemes sharing an identifier.
+    /// None of them may throw or crash — the app loses the vendored catalog and
+    /// keeps its own two themes.
+    static func themes(from data: Data) -> [TerminalTheme] {
         let decoded: [VendoredTheme]
         do {
-            let data = try Data(contentsOf: url)
             decoded = try JSONDecoder().decode([VendoredTheme].self, from: data)
         } catch {
             NSLog(
