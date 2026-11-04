@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <title>GuacTerm</title>
+  <g transform="translate(0 -15)">
+    <!-- legs, carved from the same rock -->
+    <g fill="#343a3d">
+      <path d="M132 344 L216 344 L155 428 Q155 438 145 438 L113 438 Q103 438 103 428 Z"/>
+      <path d="M380 344 L296 344 L357 428 Q357 438 367 438 L399 438 Q409 438 409 428 Z"/>
+    </g>
+
+    <!-- mortar -->
+    <path fill="#3b4144"
+          d="M76 274
+             L436 274
+             C430 320 412 352 384 368
+             C348 386 300 392 256 392
+             C212 392 164 386 128 368
+             C100 352 82 320 76 274 Z"/>
+
+    <!-- terminal text on the mortar -->
+    <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+      <text x="175" y="342" font-size="36" fill="#4ef08a">$ guac</text>
+      <rect x="313" y="315" width="24" height="30" rx="2" fill="#4ef08a"/>
+    </g>
+
+    <!-- pestle -->
+    <g transform="translate(300 252) rotate(30)" fill="#4a5257">
+      <rect x="-40" y="-165" width="80" height="165" rx="40"/>
+    </g>
+
+    <!-- guacamole -->
+    <path fill="#46a055"
+          d="M60 272
+             C56 212 76 170 110 152
+             C142 134 178 140 206 160
+             C252 192 310 224 360 244
+             C402 260 430 266 452 272 Z"/>
+    <g fill="#6ec56e">
+      <circle cx="132" cy="196" r="6"/>
+      <circle cx="192" cy="176" r="5"/>
+      <circle cx="290" cy="232" r="5"/>
+    </g>
+    <g fill="#35803f">
+      <circle cx="240" cy="196" r="5"/>
+      <circle cx="350" cy="258" r="6"/>
+    </g>
+
+    <!-- lip -->
+    <rect x="58" y="250" width="396" height="28" rx="6" fill="#474e52"/>
+  </g>
+</svg>
