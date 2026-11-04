@@ -42,7 +42,7 @@ MODE="write"
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --check) MODE="check" ;;
-        -h|--help)
+        -h | --help)
             sed -n '2,18p' "$0" | sed 's/^# \{0,1\}//'
             exit 0
             ;;

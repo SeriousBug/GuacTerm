@@ -12,8 +12,9 @@
 # Only this repository is touched. If core.hooksPath is already configured, that
 # path is used instead of .git/hooks, and this says so.
 #
-# Nothing is downloaded or installed. When the tools the checks need are missing,
-# their names and the command that installs them are printed, and that is all.
+# The checks need swiftformat and swiftlint for the Swift sources, and for the
+# shell scripts shfmt and shellcheck. Nothing is downloaded or installed here: a
+# missing tool is named with the command that installs it, and that is all.
 #
 set -euo pipefail
 
@@ -24,14 +25,15 @@ REPO_ROOT="$PWD"
 MARKER="# guacterm pre-commit hook"
 
 usage() {
-    sed -n '2,16p' "$0" | sed 's/^# \{0,1\}//'
+    # Every line of the comment block at the top, without the '#' in front.
+    sed -n '/^#!/d; /^set /q; p' "$0" | sed 's/^# \{0,1\}//'
 }
 
 UNINSTALL=0
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --uninstall) UNINSTALL=1 ;;
-        -h|--help)
+        -h | --help)
             usage
             exit 0
             ;;
@@ -87,8 +89,9 @@ fi
 # --------------------------------------------------------------------------- #
 
 missing=()
-command -v swiftformat >/dev/null 2>&1 || missing+=(swiftformat)
-command -v swiftlint >/dev/null 2>&1 || missing+=(swiftlint)
+for tool in swiftformat swiftlint shfmt shellcheck; do
+    command -v "$tool" >/dev/null 2>&1 || missing+=("$tool")
+done
 
 if [[ ${#missing[@]} -gt 0 ]]; then
     missing_names="$(printf '%s, ' "${missing[@]}")"
@@ -110,7 +113,7 @@ if [[ -f "$HOOK" ]] && ! grep -qF "$MARKER" "$HOOK"; then
     echo "==> Kept the previous hook as $BACKUP"
 fi
 
-cat > "$HOOK" <<EOF
+cat >"$HOOK" <<EOF
 #!/bin/sh
 $MARKER
 # Installed by ./setup-dev.sh. The checks live in scripts/pre-commit.sh;

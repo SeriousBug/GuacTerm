@@ -20,7 +20,7 @@ while [[ $# -gt 0 ]]; do
     case "$1" in
         --debug) CONFIGURATION="Debug" ;;
         --release) CONFIGURATION="Release" ;;
-        -h|--help)
+        -h | --help)
             sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//'
             exit 0
             ;;

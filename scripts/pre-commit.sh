@@ -15,13 +15,23 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-# What to check: the arguments, or every Swift file in the project. Sources/ is
-# a directory and scripts/ holds the one Swift tool, both passed explicitly so
-# that build/ and dist/ are never scanned.
+# What to check: the arguments, or the whole project. Swift sources are the
+# Sources/ directory and the one Swift tool in scripts/; shell sources are the
+# scripts at the top level and in scripts/. Both are passed explicitly so that
+# build/ and dist/ are never scanned. An argument goes to the shell checks when
+# it ends in .sh, and to the Swift ones otherwise.
 if [[ $# -gt 0 ]]; then
-    TARGETS=("$@")
+    SWIFT_TARGETS=()
+    SHELL_TARGETS=()
+    for target in "$@"; do
+        case "$target" in
+            *.sh) SHELL_TARGETS+=("$target") ;;
+            *) SWIFT_TARGETS+=("$target") ;;
+        esac
+    done
 else
-    TARGETS=(Sources scripts/generate-themes.swift)
+    SWIFT_TARGETS=(Sources scripts/generate-themes.swift)
+    SHELL_TARGETS=(setup-dev.sh scripts/*.sh)
 fi
 
 # --------------------------------------------------------------------------- #
@@ -31,6 +41,10 @@ fi
 missing=()
 command -v swiftformat >/dev/null 2>&1 || missing+=(swiftformat)
 command -v swiftlint >/dev/null 2>&1 || missing+=(swiftlint)
+if [[ ${#SHELL_TARGETS[@]} -gt 0 ]]; then
+    command -v shfmt >/dev/null 2>&1 || missing+=(shfmt)
+    command -v shellcheck >/dev/null 2>&1 || missing+=(shellcheck)
+fi
 
 if [[ ${#missing[@]} -gt 0 ]]; then
     missing_names="$(printf '%s, ' "${missing[@]}")"
@@ -46,26 +60,45 @@ fi
 
 status=0
 
-echo "==> Formatting (swiftformat)"
-# --lint lists the lines that would change, and by which rule, but writes
-# nothing.
-if ! swiftformat "${TARGETS[@]}" --lint; then
-    status=1
+if [[ ${#SWIFT_TARGETS[@]} -gt 0 ]]; then
+    echo "==> Formatting (swiftformat)"
+    # --lint lists the lines that would change, and by which rule, but writes
+    # nothing.
+    if ! swiftformat "${SWIFT_TARGETS[@]}" --lint; then
+        status=1
+    fi
+
+    echo "==> Style (swiftlint)"
+    # --strict turns warnings into failures, so nothing is silently tolerated;
+    # --quiet drops the per-file progress and keeps the violations.
+    if ! swiftlint lint --quiet --strict "${SWIFT_TARGETS[@]}"; then
+        status=1
+    fi
 fi
 
-echo "==> Style (swiftlint)"
-# --strict turns warnings into failures, so nothing is silently tolerated;
-# --quiet drops the per-file progress and keeps the violations.
-if ! swiftlint lint --quiet --strict "${TARGETS[@]}"; then
-    status=1
+if [[ ${#SHELL_TARGETS[@]} -gt 0 ]]; then
+    echo "==> Shell formatting (shfmt)"
+    # -d prints a diff of what would change, and writes nothing. The settings
+    # come from .editorconfig, so this agrees with what an editor does.
+    if ! shfmt -d "${SHELL_TARGETS[@]}"; then
+        status=1
+    fi
+
+    echo "==> Shell style (shellcheck)"
+    # The defaults warn about everything that is likely to be a bug. Files are
+    # read as the interpreter in their shebang, so nothing here is specific to
+    # bash.
+    if ! shellcheck "${SHELL_TARGETS[@]}"; then
+        status=1
+    fi
 fi
 
 if [[ $status -ne 0 ]]; then
     echo ""
     echo "error: commit blocked, the checks above need to pass first." >&2
     echo "" >&2
-    echo "  make format   rewrite the formatting (swiftformat)" >&2
-    echo "  make lint     list the style violations (swiftlint)" >&2
+    echo "  make format   rewrite the formatting (swiftformat, shfmt)" >&2
+    echo "  make lint     list the style violations (swiftlint, shellcheck)" >&2
     echo "" >&2
     echo "then 'git add -u' and commit again. To skip once: git commit --no-verify" >&2
     exit 1

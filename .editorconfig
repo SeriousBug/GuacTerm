@@ -1,0 +1,24 @@
+# EditorConfig — https://editorconfig.org
+#
+# shfmt reads this file, so the shell formatting the pre-commit hook enforces
+# and what an editor does to a file are the same thing. The matching Swift
+# settings live in .swiftformat, which no editor reads.
+
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+
+# shfmt's options: 4-space indent like the Swift sources, case bodies indented
+# one level deeper than their `case`, `&&` and `||` at the start of the
+# continuation line rather than trailing the one before it, and no space after a
+# redirection operator.
+[*.sh]
+indent_style = space
+indent_size = 4
+shell_variant = bash
+switch_case_indent = true
+space_redirects = false
+binary_next_line = true

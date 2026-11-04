@@ -9,13 +9,14 @@
 #   make themes-check fail if Resources/Themes.json does not match that commit
 #
 #   make setup-dev    install the git pre-commit hook (./setup-dev.sh)
-#   make format       reformat Sources/ and scripts/ in place (swiftformat)
-#   make lint         list style violations (swiftlint)
+#   make format       reformat Swift and shell sources in place
+#   make lint         list style violations (swiftlint, shellcheck)
 #   make check        what the pre-commit hook runs: format + lint, no rewriting
 
 XCODEGEN ?= xcodegen
 
 SWIFT_SOURCES = Sources scripts/generate-themes.swift
+SHELL_SOURCES = setup-dev.sh $(wildcard scripts/*.sh)
 
 .PHONY: project build run clean dist themes themes-check setup-dev format lint check
 
@@ -45,9 +46,11 @@ setup-dev:
 
 format:
 	swiftformat $(SWIFT_SOURCES)
+	shfmt -w $(SHELL_SOURCES)
 
 lint:
 	swiftlint lint --strict
+	shellcheck $(SHELL_SOURCES)
 
 check:
 	./scripts/pre-commit.sh
