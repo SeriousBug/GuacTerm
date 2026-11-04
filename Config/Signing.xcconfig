@@ -1,0 +1,20 @@
+// Signing defaults for GuacTerm.
+//
+// The checked-in defaults build and run locally with no Apple developer account:
+// ad-hoc signing ("-"), manual signing, no development team.
+//
+// For a Developer ID (notarizable) build, override these three values, either by
+// editing this file locally (it is checked in, so prefer the CLI/env route) or by
+// passing them on the xcodebuild command line, which always wins:
+//
+//   xcodebuild ... \
+//     CODE_SIGN_STYLE=Manual \
+//     DEVELOPMENT_TEAM=ABCDE12345 \
+//     CODE_SIGN_IDENTITY="Developer ID Application: Your Name (ABCDE12345)"
+//
+// scripts/notarize.sh does exactly that via DEVELOPMENT_TEAM and SIGNING_IDENTITY.
+
+CODE_SIGN_STYLE = Manual
+CODE_SIGN_IDENTITY = -
+DEVELOPMENT_TEAM =
+PROVISIONING_PROFILE_SPECIFIER =
