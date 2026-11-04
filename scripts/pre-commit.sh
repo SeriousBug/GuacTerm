@@ -5,7 +5,7 @@
 #   ./scripts/pre-commit.sh              # the whole project
 #   ./scripts/pre-commit.sh <path>...    # only these files or directories
 #
-# This is what the git pre-commit hook runs (installed by ./setup-dev.sh), and
+# This is what the git pre-commit hook runs (installed by ./scripts/setup-dev.sh), and
 # what `make check` calls. It never rewrites a file: a commit is either allowed
 # or refused, and the refusal says how to fix it. `make format` does the fixing.
 #
@@ -17,8 +17,8 @@ cd "$(dirname "$0")/.."
 
 # What to check: the arguments, or the whole project. Swift sources are the
 # Sources/ directory and the one Swift tool in scripts/; shell sources are the
-# scripts at the top level and in scripts/. Both are passed explicitly so that
-# build/ and dist/ are never scanned. An argument goes to the shell checks when
+# scripts in scripts/. Both are passed explicitly so that build/ and dist/ are
+# never scanned. An argument goes to the shell checks when
 # it ends in .sh, and to the Swift ones otherwise.
 if [[ $# -gt 0 ]]; then
     SWIFT_TARGETS=()
@@ -31,7 +31,7 @@ if [[ $# -gt 0 ]]; then
     done
 else
     SWIFT_TARGETS=(Sources scripts/generate-themes.swift)
-    SHELL_TARGETS=(setup-dev.sh scripts/*.sh)
+    SHELL_TARGETS=(scripts/*.sh)
 fi
 
 # --------------------------------------------------------------------------- #

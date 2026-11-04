@@ -2,8 +2,8 @@
 #
 # Set up this checkout for development.
 #
-#   ./setup-dev.sh              install the pre-commit hook
-#   ./setup-dev.sh --uninstall  remove the hook again
+#   ./scripts/setup-dev.sh              install the pre-commit hook
+#   ./scripts/setup-dev.sh --uninstall  remove the hook again
 #
 # The hook is a small shim: it runs scripts/pre-commit.sh, which is where the
 # checks live. Updating the checks therefore never means reinstalling the hook,
@@ -18,7 +18,9 @@
 #
 set -euo pipefail
 
-cd "$(dirname "$0")"
+# The repository root is one level up, and everything below is relative to it,
+# so the script works the same from any directory and in any worktree.
+cd "$(dirname "$0")/.."
 REPO_ROOT="$PWD"
 
 # Marks a hook as ours, so it is safe to replace and to remove.
@@ -116,7 +118,7 @@ fi
 cat >"$HOOK" <<EOF
 #!/bin/sh
 $MARKER
-# Installed by ./setup-dev.sh. The checks live in scripts/pre-commit.sh;
+# Installed by ./scripts/setup-dev.sh. The checks live in scripts/pre-commit.sh;
 # edit that instead, it is the same script 'make check' runs.
 exec "\$(git rev-parse --show-toplevel)/scripts/pre-commit.sh" "\$@"
 EOF
