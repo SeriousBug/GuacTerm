@@ -5,7 +5,6 @@ import Carbon.HIToolbox
 /// `RegisterEventHotKey`, which is the only registration API on macOS that
 /// works without asking the user for Accessibility or Input Monitoring access.
 struct KeyCombo: Hashable, Codable, Sendable {
-
     /// Virtual key code, as in `kVK_ANSI_T`.
     var keyCode: UInt16
 
@@ -14,7 +13,7 @@ struct KeyCombo: Hashable, Codable, Sendable {
 
     /// The only modifiers a global hotkey can meaningfully use.
     static let relevantModifiers: UInt32 =
-        UInt32(cmdKey | shiftKey | optionKey | controlKey)
+        .init(cmdKey | shiftKey | optionKey | controlKey)
 
     init(keyCode: UInt16, carbonModifiers: UInt32) {
         self.keyCode = keyCode
@@ -28,33 +27,66 @@ struct KeyCombo: Hashable, Codable, Sendable {
         carbonModifiers: UInt32(cmdKey | optionKey)
     )
 
-    var hasModifier: Bool { carbonModifiers != 0 }
+    var hasModifier: Bool {
+        carbonModifiers != 0
+    }
 
-    var usesCommand: Bool { carbonModifiers & UInt32(cmdKey) != 0 }
-    var usesControl: Bool { carbonModifiers & UInt32(controlKey) != 0 }
-    var usesOption: Bool { carbonModifiers & UInt32(optionKey) != 0 }
-    var usesShift: Bool { carbonModifiers & UInt32(shiftKey) != 0 }
+    var usesCommand: Bool {
+        carbonModifiers & UInt32(cmdKey) != 0
+    }
+
+    var usesControl: Bool {
+        carbonModifiers & UInt32(controlKey) != 0
+    }
+
+    var usesOption: Bool {
+        carbonModifiers & UInt32(optionKey) != 0
+    }
+
+    var usesShift: Bool {
+        carbonModifiers & UInt32(shiftKey) != 0
+    }
 
     /// Modifier symbols in the order macOS prints them: ⌃⌥⇧⌘
     var modifierSymbols: String {
         var symbols = ""
-        if usesControl { symbols += "⌃" }
-        if usesOption { symbols += "⌥" }
-        if usesShift { symbols += "⇧" }
-        if usesCommand { symbols += "⌘" }
+        if usesControl {
+            symbols += "⌃"
+        }
+        if usesOption {
+            symbols += "⌥"
+        }
+        if usesShift {
+            symbols += "⇧"
+        }
+        if usesCommand {
+            symbols += "⌘"
+        }
         return symbols
     }
 
-    var keySymbol: String { KeyName.displayName(for: keyCode) }
+    var keySymbol: String {
+        KeyName.displayName(for: keyCode)
+    }
 
-    var displayString: String { modifierSymbols + keySymbol }
+    var displayString: String {
+        modifierSymbols + keySymbol
+    }
 
     static func from(event: NSEvent) -> KeyCombo {
         var modifiers: UInt32 = 0
-        if event.modifierFlags.contains(.command) { modifiers |= UInt32(cmdKey) }
-        if event.modifierFlags.contains(.shift) { modifiers |= UInt32(shiftKey) }
-        if event.modifierFlags.contains(.option) { modifiers |= UInt32(optionKey) }
-        if event.modifierFlags.contains(.control) { modifiers |= UInt32(controlKey) }
+        if event.modifierFlags.contains(.command) {
+            modifiers |= UInt32(cmdKey)
+        }
+        if event.modifierFlags.contains(.shift) {
+            modifiers |= UInt32(shiftKey)
+        }
+        if event.modifierFlags.contains(.option) {
+            modifiers |= UInt32(optionKey)
+        }
+        if event.modifierFlags.contains(.control) {
+            modifiers |= UInt32(controlKey)
+        }
         return KeyCombo(keyCode: event.keyCode, carbonModifiers: modifiers)
     }
 
@@ -62,7 +94,7 @@ struct KeyCombo: Hashable, Codable, Sendable {
 
     init(from decoder: Decoder) throws {
         var container = try decoder.unkeyedContainer()
-        keyCode = UInt16(try container.decode(UInt32.self))
+        keyCode = try UInt16(container.decode(UInt32.self))
         carbonModifiers = try container.decode(UInt32.self) & Self.relevantModifiers
     }
 
@@ -75,7 +107,6 @@ struct KeyCombo: Hashable, Codable, Sendable {
 
 /// Turns virtual key codes into something a person can read.
 enum KeyName {
-
     private static let specialKeys: [UInt16: String] = {
         var map: [UInt16: String] = [
             UInt16(kVK_Space): "Space",
@@ -95,7 +126,7 @@ enum KeyName {
             UInt16(kVK_UpArrow): "↑",
             UInt16(kVK_DownArrow): "↓",
             UInt16(kVK_ANSI_KeypadClear): "⌧",
-            UInt16(kVK_ISO_Section): "§"
+            UInt16(kVK_ISO_Section): "§",
         ]
 
         let functionKeys: [(UInt16, Int)] = [
@@ -105,7 +136,7 @@ enum KeyName {
             (UInt16(kVK_F10), 10), (UInt16(kVK_F11), 11), (UInt16(kVK_F12), 12),
             (UInt16(kVK_F13), 13), (UInt16(kVK_F14), 14), (UInt16(kVK_F15), 15),
             (UInt16(kVK_F16), 16), (UInt16(kVK_F17), 17), (UInt16(kVK_F18), 18),
-            (UInt16(kVK_F19), 19), (UInt16(kVK_F20), 20)
+            (UInt16(kVK_F19), 19), (UInt16(kVK_F20), 20),
         ]
 
         return map
@@ -115,14 +146,18 @@ enum KeyName {
         let codes: [Int] = [
             kVK_F1, kVK_F2, kVK_F3, kVK_F4, kVK_F5, kVK_F6, kVK_F7, kVK_F8,
             kVK_F9, kVK_F10, kVK_F11, kVK_F12, kVK_F13, kVK_F14, kVK_F15,
-            kVK_F16, kVK_F17, kVK_F18, kVK_F19, kVK_F20
+            kVK_F16, kVK_F17, kVK_F18, kVK_F19, kVK_F20,
         ]
         return Set(codes.map(UInt16.init))
     }()
 
     static func displayName(for keyCode: UInt16) -> String {
-        if let special = specialKeys[keyCode] { return special }
-        if let layout = layoutCharacter(for: keyCode) { return layout }
+        if let special = specialKeys[keyCode] {
+            return special
+        }
+        if let layout = layoutCharacter(for: keyCode) {
+            return layout
+        }
         return "Key \(keyCode)"
     }
 

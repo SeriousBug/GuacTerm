@@ -10,22 +10,24 @@ enum AppearanceMode: String, CaseIterable, Identifiable, Sendable {
     case light
     case dark
 
-    var id: String { rawValue }
+    var id: String {
+        rawValue
+    }
 
     var label: String {
         switch self {
-        case .system: return "System"
-        case .light: return "Light"
-        case .dark: return "Dark"
+        case .system: "System"
+        case .light: "Light"
+        case .dark: "Dark"
         }
     }
 
     /// `nil` means "follow the system".
     var nsAppearance: NSAppearance? {
         switch self {
-        case .system: return nil
-        case .light: return NSAppearance(named: .aqua)
-        case .dark: return NSAppearance(named: .darkAqua)
+        case .system: nil
+        case .light: NSAppearance(named: .aqua)
+        case .dark: NSAppearance(named: .darkAqua)
         }
     }
 }
@@ -53,26 +55,26 @@ enum ShellLaunch: Equatable, Sendable {
 /// tmux or zellij inside the terminal.
 @MainActor
 final class Settings: ObservableObject {
-
     static let shared = Settings()
 
     /// Ranges enforced by the UI and re-checked here, so a hand-edited
     /// `defaults write` cannot produce a window taller than the screen.
     enum Limits {
-        static let scrollback = 0...1_000_000
-        static let height = 0.15...1.0
-        static let fontSize = 8.0...48.0
+        static let scrollback = 0 ... 1_000_000
+        static let height = 0.15 ... 1.0
+        static let fontSize = 8.0 ... 48.0
         /// Below 20% the theme is barely there and text stops being readable.
-        static let glassTint = 0.2...1.0
+        static let glassTint = 0.2 ... 1.0
     }
 
     /// Liquid Glass arrived in macOS 26. On anything older the panel simply
     /// keeps its solid theme background, and Settings hides the controls.
     static var glassIsSupported: Bool {
-        if #available(macOS 26.0, *) { return true }
+        if #available(macOS 26.0, *) {
+            return true
+        }
         return false
     }
-
 
     // MARK: - Stored settings
 
@@ -253,8 +255,8 @@ final class Settings: ObservableObject {
     /// It is only a note: a shell function or alias the user's own startup
     /// files define works fine through `-c`.
     var shellIsUninstalledProgram: Bool {
-        guard case .command(_, let line) = shellLaunch else { return false }
-        guard line.split(whereSeparator: \.isWhitespace).count == 1 else { return false }
+        guard case let .command(_, line) = shellLaunch,
+              line.split(whereSeparator: \.isWhitespace).count == 1 else { return false }
         return !line.contains { #"|&;<>()$`\"'"#.contains($0) }
     }
 
@@ -282,20 +284,20 @@ final class Settings: ObservableObject {
         self.defaults = defaults
         isLoading = true
 
-        self.shortcut = Self.loadShortcut(defaults) ?? .default
-        self.shellPath = defaults.string(forKey: Key.shellPath.rawValue) ?? Self.accountLoginShell
-        self.scrollbackLines = defaults.object(forKey: Key.scrollbackLines.rawValue) as? Int ?? 10_000
-        self.themeID = defaults.string(forKey: Key.themeID.rawValue) ?? TerminalTheme.defaultThemeID
-        self.heightFraction = defaults.object(forKey: Key.heightFraction.rawValue) as? Double ?? 0.45
-        self.fontName = defaults.string(forKey: Key.fontName.rawValue) ?? Self.defaultFontName
-        self.fontSize = defaults.object(forKey: Key.fontSize.rawValue) as? Double ?? 13
-        self.hideOnFocusLoss = defaults.object(forKey: Key.hideOnFocusLoss.rawValue) as? Bool ?? true
-        self.glassBackground = defaults.object(forKey: Key.glassBackground.rawValue) as? Bool ?? false
-        self.glassTint = defaults.object(forKey: Key.glassTint.rawValue) as? Double ?? 0.65
-        self.appearanceMode = defaults
+        shortcut = Self.loadShortcut(defaults) ?? .default
+        shellPath = defaults.string(forKey: Key.shellPath.rawValue) ?? Self.accountLoginShell
+        scrollbackLines = defaults.object(forKey: Key.scrollbackLines.rawValue) as? Int ?? 10000
+        themeID = defaults.string(forKey: Key.themeID.rawValue) ?? TerminalTheme.defaultThemeID
+        heightFraction = defaults.object(forKey: Key.heightFraction.rawValue) as? Double ?? 0.45
+        fontName = defaults.string(forKey: Key.fontName.rawValue) ?? Self.defaultFontName
+        fontSize = defaults.object(forKey: Key.fontSize.rawValue) as? Double ?? 13
+        hideOnFocusLoss = defaults.object(forKey: Key.hideOnFocusLoss.rawValue) as? Bool ?? true
+        glassBackground = defaults.object(forKey: Key.glassBackground.rawValue) as? Bool ?? false
+        glassTint = defaults.object(forKey: Key.glassTint.rawValue) as? Double ?? 0.65
+        appearanceMode = defaults
             .string(forKey: Key.appearanceMode.rawValue)
             .flatMap(AppearanceMode.init(rawValue:)) ?? .system
-        self.launchAtLogin = Self.isLaunchAtLoginEnabled
+        launchAtLogin = Self.isLaunchAtLoginEnabled
 
         isLoading = false
 
@@ -363,7 +365,8 @@ final class Settings: ObservableObject {
             }
         }
         if let shell = ProcessInfo.processInfo.environment["SHELL"],
-           FileManager.default.isExecutableFile(atPath: shell) {
+           FileManager.default.isExecutableFile(atPath: shell)
+        {
             return shell
         }
         return "/bin/zsh"
@@ -451,8 +454,12 @@ final class Settings: ObservableObject {
 
     static var defaultFontName: String {
         let families = NSFontManager.shared.availableFontFamilies
-        if families.contains("SF Mono") { return "SF Mono" }
-        if families.contains("Menlo") { return "Menlo" }
+        if families.contains("SF Mono") {
+            return "SF Mono"
+        }
+        if families.contains("Menlo") {
+            return "Menlo"
+        }
         return "Monaco"
     }
 

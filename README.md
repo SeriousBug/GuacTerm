@@ -33,6 +33,31 @@ GuacTerm is built around SwiftTerm. Sessions get:
 | Rendering | Metal (GPU) with a Core Graphics fallback |
 | Input | bracketed paste, alt/meta keys, IME input |
 
+## Development
+
+Building needs the Xcode command line tools and
+[xcodegen](https://github.com/yonaskolb/XcodeGen):
+
+```sh
+make project     # regenerate GuacTerm.xcodeproj from project.yml
+make run         # build, then launch
+```
+
+Formatting and lint are checked before every commit. `./setup-dev.sh` installs
+that hook. The two tools it runs,
+[SwiftFormat](https://github.com/nicklockwood/SwiftFormat) and
+[SwiftLint](https://github.com/realm/SwiftLint), are expected on `PATH`; the
+script names them if they are missing but never installs anything itself:
+
+```sh
+brew install swiftformat swiftlint
+./setup-dev.sh
+make format      # rewrite the sources to the style in .swiftformat
+make check       # exactly what the hook runs, without touching a file
+```
+
+`git commit --no-verify` skips the check once.
+
 ## License
 
 GuacTerm is licensed under [MIT](LICENSE).

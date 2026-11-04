@@ -8,7 +8,6 @@ import SwiftTerm
 /// and the working directory are still there when you come back.
 @MainActor
 final class TerminalController: NSObject {
-
     private enum Timing {
         static let show: TimeInterval = 0.18
         static let hide: TimeInterval = 0.14
@@ -50,7 +49,9 @@ final class TerminalController: NSObject {
     /// hanging above it.
     private var isSettingsPreviewing = false
 
-    var isShown: Bool { visible }
+    var isShown: Bool {
+        visible
+    }
 
     /// The panel's frame on screen while it is resting there, or `nil` while it
     /// is away. The settings window uses it to stay out of the terminal's way,
@@ -63,7 +64,7 @@ final class TerminalController: NSObject {
 
     init(settings: Settings) {
         self.settings = settings
-        self.panel = DropDownPanel(
+        panel = DropDownPanel(
             contentRect: NSRect(x: 0, y: 0, width: 1200, height: 500),
             styleMask: [.borderless],
             backing: .buffered,
@@ -210,7 +211,9 @@ final class TerminalController: NSObject {
     /// impossible to look at.
     func handleApplicationDeactivated() {
         guard settings.hideOnFocusLoss, visible, !isSettingsPreviewing else { return }
-        if let shownAt, Date().timeIntervalSince(shownAt) < Timing.deactivationGrace { return }
+        if let shownAt, Date().timeIntervalSince(shownAt) < Timing.deactivationGrace {
+            return
+        }
         hide()
     }
 
@@ -392,7 +395,7 @@ final class TerminalController: NSObject {
         let launch = settings.shellLaunch
 
         switch launch {
-        case .program(let program):
+        case let .program(program):
             terminalView.startProcess(
                 executable: program,
                 args: [],
@@ -401,7 +404,7 @@ final class TerminalController: NSObject {
                 currentDirectory: NSHomeDirectory()
             )
 
-        case .command(let shell, let line):
+        case let .command(shell, line):
             // Only a shell can interpret a command line, so the account's own
             // login shell parses it and then `exec`s what it found.
             terminalView.startProcess(
@@ -511,20 +514,19 @@ final class TerminalController: NSObject {
 // MARK: - LocalProcessTerminalViewDelegate
 
 extension TerminalController: LocalProcessTerminalViewDelegate {
-
-    func sizeChanged(source: LocalProcessTerminalView, newCols: Int, newRows: Int) {
+    func sizeChanged(source _: LocalProcessTerminalView, newCols _: Int, newRows _: Int) {
         // SwiftTerm drives the PTY window size itself; nothing to do.
     }
 
-    func setTerminalTitle(source: LocalProcessTerminalView, title: String) {
+    func setTerminalTitle(source _: LocalProcessTerminalView, title _: String) {
         // A drop-down terminal has no title bar to show it in.
     }
 
-    func hostCurrentDirectoryUpdate(source: TerminalView, directory: String?) {
+    func hostCurrentDirectoryUpdate(source _: TerminalView, directory _: String?) {
         // Kept for future use; the app does not track the working directory.
     }
 
-    func processTerminated(source: TerminalView, exitCode: Int32?) {
+    func processTerminated(source: TerminalView, exitCode _: Int32?) {
         // `exit` was typed, or the program the panel ran — a multiplexer, say —
         // finished. Either way there is nothing left to look at, so the panel
         // drops away exactly as if the shortcut had been pressed, and the next

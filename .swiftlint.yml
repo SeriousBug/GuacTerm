@@ -1,0 +1,107 @@
+# SwiftLint — https://github.com/realm/SwiftLint
+#
+#   ./scripts/pre-commit.sh      runs this in --strict mode
+#   swiftlint --strict           warnings count as failures
+#
+# Layout is SwiftFormat's job: brace placement, wrapping, commas and spaces are
+# checked there, and the two tools must not disagree. This file covers what a
+# formatter cannot judge: naming, size, force casts, unused code.
+
+included:
+  - Sources
+  - scripts
+
+excluded:
+  - build
+  - dist
+  - Resources
+
+disabled_rules:
+  # Formatting rules that would fight SwiftFormat.
+  - trailing_comma
+  - opening_brace
+  - closure_parameter_position
+  - statement_position
+  - control_statement
+  - colon
+  - comma
+  # A TODO is a note to yourself, not something to block a commit over.
+  - todo
+
+analyzer_rules:
+  - unused_declaration
+  - unused_import
+
+opt_in_rules:
+  - empty_count
+  - empty_string
+  - explicit_init
+  - fallthrough
+  - first_where
+  - force_unwrapping
+  - implicit_return
+  - joined_default_parameter
+  - last_where
+  - legacy_multiple
+  - lower_acl_than_parent
+  - no_fallthrough_only
+  - nslocalizedstring_key
+  - override_in_extension
+  - private_action
+  - private_outlet
+  - redundant_nil_coalescing
+  - sorted_first_last
+  - toggle_bool
+  - unavailable_function
+  - unneeded_parentheses_in_closure_argument
+  - untyped_error_in_catch
+  - yoda_condition
+
+line_length:
+  warning: 120
+  error: 200
+  ignores_comments: true
+  ignores_urls: true
+  ignores_interpolated_strings: true
+
+file_length:
+  warning: 600
+  error: 900
+
+type_body_length:
+  warning: 400
+  error: 600
+
+function_body_length:
+  warning: 100
+  error: 160
+
+function_parameter_count:
+  warning: 7
+  error: 10
+
+cyclomatic_complexity:
+  warning: 20
+  error: 30
+
+nesting:
+  type_level: 2
+  function_level: 3
+
+identifier_name:
+  min_length:
+    warning: 1
+    error: 1
+  max_length:
+    warning: 50
+    error: 60
+
+type_name:
+  min_length:
+    warning: 3
+    error: 2
+  max_length:
+    warning: 50
+    error: 60
+
+reporter: "xcode"

@@ -28,7 +28,6 @@ private struct VendoredTheme: Decodable {
 }
 
 enum ThemeCatalogLoader {
-
     /// Number of colors every scheme must carry (ANSI 0-15).
     private static let ansiCount = 16
 
@@ -97,15 +96,11 @@ enum ThemeCatalogLoader {
     /// background, so a vendored scheme and the same file imported through
     /// `ThemeLibrary` cannot disagree about it.
     private static func theme(from entry: VendoredTheme) -> TerminalTheme? {
-        guard !entry.id.isEmpty, !entry.name.isEmpty else { return nil }
-        guard entry.ansi.count == ansiCount else { return nil }
-        guard TerminalTheme.isHexColor(entry.bg),
+        guard !entry.id.isEmpty, !entry.name.isEmpty, entry.ansi.count == ansiCount,
+              TerminalTheme.isHexColor(entry.bg),
               TerminalTheme.isHexColor(entry.fg),
-              TerminalTheme.isHexColor(entry.cursor)
-        else {
-            return nil
-        }
-        guard entry.ansi.allSatisfy(TerminalTheme.isHexColor) else { return nil }
+              TerminalTheme.isHexColor(entry.cursor),
+              entry.ansi.allSatisfy(TerminalTheme.isHexColor) else { return nil }
 
         return TerminalTheme(
             id: entry.id,

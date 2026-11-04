@@ -1,0 +1,33 @@
+# SwiftFormat — https://github.com/nicklockwood/SwiftFormat
+#
+#   make format              rewrite Sources/ and scripts/ in place
+#   make check               check only, without touching a file
+#
+# SwiftFormat's defaults are the baseline; the options below only pin the ones
+# that must agree with .swiftlint.yml or that would otherwise vary per file.
+
+# The app builds in Swift 6 language mode with full strict concurrency.
+--swiftversion 6.0
+--language-mode 6.0
+--min-version 0.64
+
+# Generated output, never formatted even if someone runs `swiftformat .`.
+--exclude build,dist
+
+# Four spaces. 120 columns, the same width as SwiftLint's line_length.
+--indent 4
+--maxwidth 120
+
+# Once a line is too long: each argument, parameter and collection element gets
+# its own line, and the closing bracket gets its own too. Conditions instead
+# keep their first clause on the `if`/`guard` line, which is how they are read.
+--wraparguments before-first
+--wrapparameters before-first
+--wrapcollections before-first
+--wrapconditions after-first
+--wrapeffects if-multiline
+
+# Rules that are off by default but worth having.
+--enable isEmpty
+--enable preferContains
+--enable forWhere

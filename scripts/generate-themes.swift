@@ -36,7 +36,6 @@ import Foundation
 
 @main
 struct GenerateThemes {
-
     /// Skipping more schemes than this fraction of the source files is an
     /// error, so a broken or partial checkout fails loudly instead of quietly
     /// shrinking the catalog.
@@ -57,7 +56,18 @@ struct GenerateThemes {
         /// schemes want the same identifier.
         let fileName: String
 
-        var name: String { scheme.name }
+        var name: String {
+            scheme.name
+        }
+    }
+
+    /// A scheme whose identifier had to be disambiguated, kept so the run can
+    /// report which file asked for a name another file already had.
+    struct Collision {
+        let name: String
+        let fileName: String
+        let base: String
+        let id: String
     }
 
     // MARK: - Entry point
@@ -95,53 +105,16 @@ struct GenerateThemes {
 
         for file in files {
             do {
-                read.append((file.lastPathComponent, try ITermColors.parse(contentsOf: file)))
+                try read.append((file.lastPathComponent, ITermColors.parse(contentsOf: file)))
             } catch {
                 skipped.append((file.lastPathComponent, message(for: error)))
             }
         }
 
         // ------------------------------------------------------------ assign ids
-        //
-        // Grouped by the identifier the name slugs to, so a collision is
-        // resolved in a fixed order: the scheme whose name is already a clean
-        // slug keeps the plain id and the others get "-2", "-3", ... in name
-        // order. Everything is driven by sorted keys, so the result never
-        // depends on the order the filesystem returned the files in.
-        var groups: [String: [(fileName: String, scheme: ParsedScheme)]] = [:]
-        for item in read {
-            groups[ITermColors.slug(item.scheme.name), default: []].append(item)
-        }
-
-        var usedIDs = Set<String>()
-        var entries: [Entry] = []
-        var collisions: [(name: String, fileName: String, base: String, id: String)] = []
-        entries.reserveCapacity(read.count)
-
-        for base in groups.keys.sorted() {
-            let members = (groups[base] ?? []).sorted { lhs, rhs in
-                let left = lhs.scheme, right = rhs.scheme
-                let leftRank = canonicalRank(left.name), rightRank = canonicalRank(right.name)
-                if leftRank != rightRank { return leftRank < rightRank }
-                if left.name.lowercased() != right.name.lowercased() {
-                    return left.name.lowercased() < right.name.lowercased()
-                }
-                if left.name != right.name { return left.name < right.name }
-                return lhs.fileName < rhs.fileName
-            }
-
-            for member in members {
-                let (id, suffix) = uniqueID(base, used: &usedIDs)
-                if suffix != nil {
-                    collisions.append(
-                        (member.scheme.name, member.fileName, base, id)
-                    )
-                }
-                entries.append(Entry(id: id, scheme: member.scheme, fileName: member.fileName))
-            }
-        }
-
-        entries.sort(by: Entry.nameOrder)
+        let assigned = assignIdentifiers(to: read)
+        let entries = assigned.entries
+        let collisions = assigned.collisions
 
         // ---------------------------------------------------------------- write
         let text = render(entries)
@@ -189,6 +162,69 @@ struct GenerateThemes {
         return 0
     }
 
+    // MARK: - Assigning identifiers
+
+    /// What ``assignIdentifiers(to:)`` worked out: the catalog entries, and the
+    /// schemes that had to share a base identifier with another one.
+    struct Assignment {
+        let entries: [Entry]
+        let collisions: [Collision]
+    }
+
+    /// Gives every scheme its identifier.
+    ///
+    /// Grouped by the identifier the name slugs to, so a collision is resolved in
+    /// a fixed order: the scheme whose name is already a clean slug keeps the
+    /// plain id and the others get "-2", "-3", ... in name order. Everything is
+    /// driven by sorted keys, so the result never depends on the order the
+    /// filesystem returned the files in.
+    static func assignIdentifiers(to read: [(fileName: String, scheme: ParsedScheme)]) -> Assignment {
+        var groups: [String: [(fileName: String, scheme: ParsedScheme)]] = [:]
+        for item in read {
+            groups[ITermColors.slug(item.scheme.name), default: []].append(item)
+        }
+
+        var usedIDs = Set<String>()
+        var entries: [Entry] = []
+        var collisions: [Collision] = []
+        entries.reserveCapacity(read.count)
+
+        for base in groups.keys.sorted() {
+            let members = (groups[base] ?? []).sorted { lhs, rhs in
+                let left = lhs.scheme, right = rhs.scheme
+                let leftRank = canonicalRank(left.name), rightRank = canonicalRank(right.name)
+                if leftRank != rightRank {
+                    return leftRank < rightRank
+                }
+                if left.name.lowercased() != right.name.lowercased() {
+                    return left.name.lowercased() < right.name.lowercased()
+                }
+                if left.name != right.name {
+                    return left.name < right.name
+                }
+                return lhs.fileName < rhs.fileName
+            }
+
+            for member in members {
+                let (id, suffix) = uniqueID(base, used: &usedIDs)
+                if suffix != nil {
+                    collisions.append(
+                        Collision(
+                            name: member.scheme.name,
+                            fileName: member.fileName,
+                            base: base,
+                            id: id
+                        )
+                    )
+                }
+                entries.append(Entry(id: id, scheme: member.scheme, fileName: member.fileName))
+            }
+        }
+
+        entries.sort(by: Entry.nameOrder)
+        return Assignment(entries: entries, collisions: collisions)
+    }
+
     // MARK: - Arguments
 
     struct Options {
@@ -204,11 +240,15 @@ struct GenerateThemes {
             while let argument = remaining.first {
                 remaining = remaining.dropFirst()
                 switch argument {
-                case "--source", "--output":
+                case "--output", "--source":
                     guard let value = remaining.first else { return nil }
                     remaining = remaining.dropFirst()
                     let url = URL(fileURLWithPath: (value as NSString).expandingTildeInPath)
-                    if argument == "--source" { source = url } else { output = url }
+                    if argument == "--source" {
+                        source = url
+                    } else {
+                        output = url
+                    }
                 default:
                     return nil
                 }
@@ -344,7 +384,7 @@ struct GenerateThemes {
                     out += String(format: "\\u%04x", scalar.value)
                 } else {
                     // Above the BMP: a surrogate pair, as JSON requires.
-                    let value = scalar.value - 0x1_0000
+                    let value = scalar.value - 0x10000
                     out += String(format: "\\u%04x\\u%04x", 0xD800 + (value >> 10), 0xDC00 + (value & 0x3FF))
                 }
             }
@@ -360,7 +400,7 @@ struct GenerateThemes {
         total: Int,
         written: Int,
         skipped: [(fileName: String, reason: String)],
-        collisions: [(name: String, fileName: String, base: String, id: String)],
+        collisions: [Collision],
         cursorFallbacks: [String]
     ) {
         let size = text.utf8.count
@@ -391,7 +431,9 @@ struct GenerateThemes {
 
     // MARK: - Helpers
 
-    static var standardError: FileHandle { FileHandle.standardError }
+    static var standardError: FileHandle {
+        FileHandle.standardError
+    }
 
     static func message(for error: Error) -> String {
         (error as? LocalizedError)?.errorDescription ?? error.localizedDescription

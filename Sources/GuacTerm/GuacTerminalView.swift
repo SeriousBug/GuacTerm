@@ -13,7 +13,6 @@ import SwiftTerm
 /// - Right-clicking should offer the usual Copy/Paste when the program in the
 ///   terminal has not asked for the mouse itself.
 final class GuacTerminalView: LocalProcessTerminalView {
-
     private var didAttemptMetal = false
 
     override init(frame: CGRect, font: NSFont? = nil, options: TerminalOptions) {
@@ -22,7 +21,7 @@ final class GuacTerminalView: LocalProcessTerminalView {
     }
 
     @available(*, unavailable)
-    required init?(coder: NSCoder) {
+    required init?(coder _: NSCoder) {
         fatalError("init(coder:) is not supported")
     }
 
@@ -33,7 +32,7 @@ final class GuacTerminalView: LocalProcessTerminalView {
 
     /// GuacTerm's panel is often clicked straight from another app; without
     /// this the first click would be spent activating the window.
-    override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
+    override func acceptsFirstMouse(for _: NSEvent?) -> Bool {
         true
     }
 

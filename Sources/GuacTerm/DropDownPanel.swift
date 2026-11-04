@@ -10,11 +10,15 @@ import AppKit
 ///   `setFrame`. The slide-in works by parking the window *above* the top edge
 ///   of the screen and animating it down, which AppKit would otherwise undo.
 final class DropDownPanel: NSPanel {
+    override var canBecomeKey: Bool {
+        true
+    }
 
-    override var canBecomeKey: Bool { true }
-    override var canBecomeMain: Bool { true }
+    override var canBecomeMain: Bool {
+        true
+    }
 
-    override func constrainFrameRect(_ frameRect: NSRect, to screen: NSScreen?) -> NSRect {
+    override func constrainFrameRect(_ frameRect: NSRect, to _: NSScreen?) -> NSRect {
         frameRect
     }
 
@@ -22,7 +26,7 @@ final class DropDownPanel: NSPanel {
     /// cycling or be raised by a click.
     override var isMovable: Bool {
         get { false }
-        set { }
+        set {}
     }
 }
 
@@ -30,7 +34,6 @@ final class DropDownPanel: NSPanel {
 /// terminal to rounded bottom corners, so the window reads as something pulled
 /// down from the top of the screen rather than a floating box.
 final class DropDownContainerView: NSView {
-
     var cornerRadius: CGFloat = 12 {
         didSet { layer?.cornerRadius = cornerRadius }
     }
@@ -42,7 +45,9 @@ final class DropDownContainerView: NSView {
         }
     }
 
-    override var isOpaque: Bool { false }
+    override var isOpaque: Bool {
+        false
+    }
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
@@ -53,7 +58,7 @@ final class DropDownContainerView: NSView {
     }
 
     @available(*, unavailable)
-    required init?(coder: NSCoder) {
+    required init?(coder _: NSCoder) {
         fatalError("init(coder:) is not supported")
     }
 }

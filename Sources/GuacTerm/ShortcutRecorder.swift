@@ -9,11 +9,10 @@ import SwiftUI
 /// the Carbon hotkey registers, while an `NSEvent` gives us exactly the key code
 /// and modifier mask `RegisterEventHotKey` wants.
 final class ShortcutRecorderView: NSView {
-
     /// Virtual key codes, as in Carbon's `HIToolbox` key code table.
     private enum VirtualKey {
-        static let escape: UInt16 = 0x35        // kVK_Escape
-        static let delete: UInt16 = 0x33        // kVK_Delete, the Backspace key
+        static let escape: UInt16 = 0x35 // kVK_Escape
+        static let delete: UInt16 = 0x33 // kVK_Delete, the Backspace key
         static let forwardDelete: UInt16 = 0x75 // kVK_ForwardDelete
     }
 
@@ -52,7 +51,7 @@ final class ShortcutRecorderView: NSView {
     }
 
     @available(*, unavailable)
-    required init?(coder: NSCoder) {
+    required init?(coder _: NSCoder) {
         fatalError("ShortcutRecorderView is created in code")
     }
 
@@ -62,10 +61,14 @@ final class ShortcutRecorderView: NSView {
 
     // MARK: - First responder
 
-    override var acceptsFirstResponder: Bool { true }
+    override var acceptsFirstResponder: Bool {
+        true
+    }
 
     /// A click on an inactive window should start recording straight away.
-    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+    override func acceptsFirstMouse(for _: NSEvent?) -> Bool {
+        true
+    }
 
     override func becomeFirstResponder() -> Bool {
         startRecording()
@@ -77,7 +80,7 @@ final class ShortcutRecorderView: NSView {
         return super.resignFirstResponder()
     }
 
-    override func mouseDown(with event: NSEvent) {
+    override func mouseDown(with _: NSEvent) {
         if window?.makeFirstResponder(self) ?? false {
             startRecording()
         }
@@ -141,7 +144,7 @@ final class ShortcutRecorderView: NSView {
 
     // MARK: - Drawing
 
-    override func draw(_ dirtyRect: NSRect) {
+    override func draw(_: NSRect) {
         let outline = bounds.insetBy(dx: Metrics.borderWidth / 2, dy: Metrics.borderWidth / 2)
         let capsule = NSBezierPath(
             roundedRect: outline,
@@ -169,7 +172,7 @@ final class ShortcutRecorderView: NSView {
         let font = NSFont.systemFont(ofSize: Metrics.fontSize, weight: .medium)
         let attributes: [NSAttributedString.Key: Any] = [
             .font: font,
-            .foregroundColor: NSColor.labelColor
+            .foregroundColor: NSColor.labelColor,
         ]
 
         let string = text as NSString
@@ -184,7 +187,7 @@ final class ShortcutRecorderView: NSView {
             )
             let scaledAttributes: [NSAttributedString.Key: Any] = [
                 .font: scaled,
-                .foregroundColor: NSColor.labelColor
+                .foregroundColor: NSColor.labelColor,
             ]
             size = string.size(withAttributes: scaledAttributes)
             string.draw(
@@ -209,10 +212,9 @@ final class ShortcutRecorderView: NSView {
 
 /// A capsule that records the next key combination into `combo`.
 struct ShortcutRecorder: NSViewRepresentable {
-
     @Binding var combo: KeyCombo
 
-    func makeNSView(context: Context) -> ShortcutRecorderView {
+    func makeNSView(context _: Context) -> ShortcutRecorderView {
         let view = ShortcutRecorderView()
         view.combo = combo
         // Without this the capsule stretches to whatever width the row offers.
@@ -225,14 +227,14 @@ struct ShortcutRecorder: NSViewRepresentable {
     }
 
     func sizeThatFits(
-        _ proposal: ProposedViewSize,
+        _: ProposedViewSize,
         nsView: ShortcutRecorderView,
-        context: Context
+        context _: Context
     ) -> CGSize? {
         nsView.intrinsicContentSize
     }
 
-    func updateNSView(_ nsView: ShortcutRecorderView, context: Context) {
+    func updateNSView(_ nsView: ShortcutRecorderView, context _: Context) {
         // While the user is recording, the view owns the value: writing it back
         // from stale state would drop the combination under their fingers.
         guard !nsView.isRecording else { return }

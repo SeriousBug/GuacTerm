@@ -7,7 +7,6 @@ import Foundation
 /// to be supplied here. The login shell (`-zsh`) then sources the user's own
 /// startup files on top.
 enum ShellEnvironment {
-
     static func make(shell: String) -> [String] {
         var environment = ProcessInfo.processInfo.environment
 
@@ -21,14 +20,22 @@ enum ShellEnvironment {
         let userName = NSUserName()
         let home = NSHomeDirectory()
 
-        if environment["HOME"]?.isEmpty ?? true { environment["HOME"] = home }
-        if environment["USER"]?.isEmpty ?? true { environment["USER"] = userName }
-        if environment["LOGNAME"]?.isEmpty ?? true { environment["LOGNAME"] = userName }
+        if environment["HOME"]?.isEmpty ?? true {
+            environment["HOME"] = home
+        }
+        if environment["USER"]?.isEmpty ?? true {
+            environment["USER"] = userName
+        }
+        if environment["LOGNAME"]?.isEmpty ?? true {
+            environment["LOGNAME"] = userName
+        }
         if environment["PATH"]?.isEmpty ?? true {
             environment["PATH"] = "/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin"
         }
         // Terminals must speak UTF-8 or tools like vim render mojibake.
-        if environment["LANG"]?.isEmpty ?? true { environment["LANG"] = "en_US.UTF-8" }
+        if environment["LANG"]?.isEmpty ?? true {
+            environment["LANG"] = "en_US.UTF-8"
+        }
 
         // Launch Services-specific leftovers confuse some build tools.
         environment.removeValue(forKey: "XPC_FLAGS")

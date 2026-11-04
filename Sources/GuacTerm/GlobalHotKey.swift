@@ -9,17 +9,16 @@ import Carbon.HIToolbox
 /// moment it is dropped into /Applications.
 @MainActor
 final class GlobalHotKey {
-
     enum RegistrationFailure: LocalizedError {
         case alreadyTaken(String)
         case systemError(OSStatus)
 
         var errorDescription: String? {
             switch self {
-            case .alreadyTaken(let combo):
-                return "\(combo) is already used by another app."
-            case .systemError(let status):
-                return "macOS refused the shortcut (error \(status))."
+            case let .alreadyTaken(combo):
+                "\(combo) is already used by another app."
+            case let .systemError(status):
+                "macOS refused the shortcut (error \(status))."
             }
         }
     }
@@ -95,7 +94,7 @@ final class GlobalHotKey {
         )
     }
 
-    fileprivate func fire() {
+    private func fire() {
         onPress?()
     }
 }

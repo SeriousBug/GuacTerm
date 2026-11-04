@@ -7,7 +7,6 @@ import SwiftUI
 /// Every control reads and writes ``Settings`` directly, so there is no "Apply"
 /// button and no second copy of the configuration to keep in sync.
 struct SettingsView: View {
-
     @ObservedObject var settings: Settings
     @ObservedObject var library: ThemeLibrary
 
@@ -43,7 +42,9 @@ struct SettingsView: View {
         }
         .onAppear {
             loadSystemLists()
-            if showsThemePickerOnAppear { showingThemePicker = true }
+            if showsThemePickerOnAppear {
+                showingThemePicker = true
+            }
         }
         .sheet(isPresented: $showingThemePicker) {
             ThemePicker(settings: settings, library: library)
@@ -122,7 +123,10 @@ struct SettingsView: View {
 
             row(
                 "Hide When Focus Is Lost",
-                caption: "Drop the terminal away when you switch to another app. While Settings is open it stays put, so changes can be previewed."
+                caption: """
+                Drop the terminal away when you switch to another app. While Settings \
+                is open it stays put, so changes can be previewed.
+                """
             ) {
                 Toggle("Hide When Focus Is Lost", isOn: $settings.hideOnFocusLoss)
                     .labelsHidden()
@@ -139,10 +143,10 @@ struct SettingsView: View {
     }
 
     /// Label on the left, control right-aligned, optional caption underneath.
-    private func row<Control: View>(
+    private func row(
         _ title: String,
         caption: String? = nil,
-        @ViewBuilder control: () -> Control
+        @ViewBuilder control: () -> some View
     ) -> some View {
         VStack(alignment: .leading, spacing: 5) {
             HStack(spacing: 16) {
@@ -222,7 +226,10 @@ struct SettingsView: View {
                 row(
                     "Liquid Glass",
                     caption: settings.glassBackground
-                        ? "The theme is painted over macOS's glass material, so the desktop shows through as it moves behind it."
+                        ? """
+                        The theme is painted over macOS's glass material, \
+                        so the desktop shows through as it moves behind it.
+                        """
                         : "Put the terminal on macOS's Liquid Glass material instead of a solid background."
                 ) {
                     Toggle("Liquid Glass", isOn: $settings.glassBackground)
@@ -234,7 +241,10 @@ struct SettingsView: View {
                     Divider()
                     row(
                         "Glass Tint",
-                        caption: "How much of the theme covers the glass. Lower shows more of the desktop, and is harder to read on busy backgrounds."
+                        caption: """
+                        How much of the theme covers the glass. Lower shows more of the desktop, \
+                        and is harder to read on busy backgrounds.
+                        """
                     ) {
                         HStack(spacing: 10) {
                             Slider(value: glassTintBinding, in: Settings.Limits.glassTint)
@@ -313,9 +323,9 @@ struct SettingsView: View {
             return "Empty, so \(Settings.accountLoginShell) is used."
         }
         switch settings.shellLaunch {
-        case .program(let program):
+        case let .program(program):
             return "Runs \(program) as a login shell. Applies to the next session."
-        case .command(let shell, _):
+        case let .command(shell, _):
             return "A command line, so \(shell) -c runs it. Applies to the next session."
         }
     }
@@ -456,15 +466,14 @@ struct SettingsView: View {
 /// A live sample of the selected ``TerminalTheme``: ANSI palette, a prompt line
 /// and the cursor block, on the theme's own background.
 private struct ThemePreview: View {
-
     let theme: TerminalTheme
 
     var body: some View {
         VStack(alignment: .leading, spacing: 9) {
             VStack(alignment: .leading, spacing: 3) {
-                ForEach(0..<2, id: \.self) { row in
+                ForEach(0 ..< 2, id: \.self) { row in
                     HStack(spacing: 3) {
-                        ForEach(0..<8, id: \.self) { column in
+                        ForEach(0 ..< 8, id: \.self) { column in
                             RoundedRectangle(cornerRadius: 2, style: .continuous)
                                 .fill(swatch(row * 8 + column))
                                 .frame(width: 16, height: 9)

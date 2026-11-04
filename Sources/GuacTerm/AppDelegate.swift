@@ -5,7 +5,6 @@ import UniformTypeIdentifiers
 /// terminal and the settings window.
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
-
     private let settings = Settings.shared
     private let themes = ThemeLibrary.shared
     private let hotKey = GlobalHotKey()
@@ -20,7 +19,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     // MARK: - Launch
 
-    func applicationDidFinishLaunching(_ notification: Notification) {
+    func applicationDidFinishLaunching(_: Notification) {
         buildMainMenu()
         terminal = TerminalController(settings: settings)
 
@@ -65,12 +64,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    func applicationWillTerminate(_ notification: Notification) {
+    func applicationWillTerminate(_: Notification) {
         hotKey.unregister()
         terminal.shutdown()
     }
 
-    func applicationDidResignActive(_ notification: Notification) {
+    func applicationDidResignActive(_: Notification) {
         terminal.handleApplicationDeactivated()
     }
 
@@ -88,7 +87,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.orderFrontStandardAboutPanel(options: [
             .applicationName: AppInfo.name,
             .applicationVersion: AppInfo.version,
-            .version: AppInfo.build
+            .version: AppInfo.build,
         ])
     }
 
@@ -105,7 +104,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         panel.canChooseDirectories = false
         panel.canChooseFiles = true
         panel.allowedContentTypes = [
-            UTType(filenameExtension: ITermColors.pathExtension) ?? .data
+            UTType(filenameExtension: ITermColors.pathExtension) ?? .data,
         ]
 
         NSApp.activate()
@@ -117,7 +116,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// `open -a GuacTerm scheme.itermcolors`. This is why the bundle declares the
     /// type (see project.yml) — double-clicking a scheme is the shortest path
     /// there is.
-    func application(_ application: NSApplication, open urls: [URL]) {
+    func application(_: NSApplication, open urls: [URL]) {
         importThemes(from: urls)
     }
 
@@ -230,7 +229,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem?.button?.toolTip = "\(AppInfo.name) — \(settings.shortcut.displayString)"
     }
 
-    @objc private func statusItemClicked(_ sender: NSStatusBarButton) {
+    @objc private func statusItemClicked(_: NSStatusBarButton) {
         if NSApp.currentEvent?.type == .rightMouseUp {
             presentStatusMenu()
         } else {

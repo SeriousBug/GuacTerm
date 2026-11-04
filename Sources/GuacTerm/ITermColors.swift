@@ -30,7 +30,6 @@ protocol NamedTheme {
 }
 
 extension NamedTheme {
-
     /// Case-insensitive by name, then by the exact name and identifier, so the
     /// order is total and a list is stable whatever it was built from.
     ///
@@ -40,8 +39,12 @@ extension NamedTheme {
     static func nameOrder(_ lhs: Self, _ rhs: Self) -> Bool {
         let left = lhs.name.lowercased()
         let right = rhs.name.lowercased()
-        if left != right { return left < right }
-        if lhs.name != rhs.name { return lhs.name < rhs.name }
+        if left != right {
+            return left < right
+        }
+        if lhs.name != rhs.name {
+            return lhs.name < rhs.name
+        }
         return lhs.id < rhs.id
     }
 }
@@ -77,19 +80,18 @@ enum ITermColorsError: LocalizedError, Equatable {
     var errorDescription: String? {
         switch self {
         case .notAPropertyList:
-            return "not a property list"
+            "not a property list"
         case .notAScheme:
-            return "not an iTerm2 colour scheme"
-        case .missingKey(let key):
-            return "no \(key)"
-        case .malformedColor(let key):
-            return "\(key) is not a colour"
+            "not an iTerm2 colour scheme"
+        case let .missingKey(key):
+            "no \(key)"
+        case let .malformedColor(key):
+            "\(key) is not a colour"
         }
     }
 }
 
 enum ITermColors {
-
     /// The filename extension iTerm2 uses when it exports a scheme.
     static let pathExtension = "itermcolors"
 
@@ -164,8 +166,8 @@ enum ITermColors {
         var separatorPending = false
 
         for scalar in folded.unicodeScalars {
-            let isAlphanumeric = (scalar.value >= 0x61 && scalar.value <= 0x7A)   // a-z
-                || (scalar.value >= 0x30 && scalar.value <= 0x39)                // 0-9
+            let isAlphanumeric = (scalar.value >= 0x61 && scalar.value <= 0x7A) // a-z
+                || (scalar.value >= 0x30 && scalar.value <= 0x39) // 0-9
             if isAlphanumeric {
                 if separatorPending, !slug.isEmpty {
                     slug.append("-")
@@ -184,7 +186,7 @@ enum ITermColors {
 
     /// The plist keys an iTerm2 scheme uses. `0x` rather than `%d` padding
     /// matches both iTerm2's export and the generator.
-    private static let ansiKeys = (0..<16).map { "Ansi \($0) Color" }
+    private static let ansiKeys = (0 ..< 16).map { "Ansi \($0) Color" }
     private static let backgroundKey = "Background Color"
     private static let foregroundKey = "Foreground Color"
     private static let cursorKey = "Cursor Color"
@@ -227,8 +229,12 @@ enum ITermColors {
     private static func byte(_ component: Double) -> Int {
         let scaled = component * 255 + 0.5
         guard scaled.isFinite else { return 0 }
-        if scaled <= 0 { return 0 }
-        if scaled >= 255 { return 255 }
+        if scaled <= 0 {
+            return 0
+        }
+        if scaled >= 255 {
+            return 255
+        }
         return Int(scaled)
     }
 }

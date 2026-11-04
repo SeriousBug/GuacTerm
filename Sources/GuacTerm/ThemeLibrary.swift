@@ -27,7 +27,6 @@ import AppKit
 /// queue that would only add ordering problems.
 @MainActor
 final class ThemeLibrary: ObservableObject {
-
     static let shared = ThemeLibrary()
 
     /// Where imported schemes live. Not sandboxed, so this is the real user
@@ -38,7 +37,7 @@ final class ThemeLibrary: ObservableObject {
             .urls(for: .applicationSupportDirectory, in: .userDomainMask)
             .first
             ?? URL(fileURLWithPath: NSHomeDirectory())
-                .appendingPathComponent("Library/Application Support", isDirectory: true)
+            .appendingPathComponent("Library/Application Support", isDirectory: true)
         return base
             .appendingPathComponent(AppInfo.name, isDirectory: true)
             .appendingPathComponent("Themes", isDirectory: true)
@@ -66,7 +65,9 @@ final class ThemeLibrary: ObservableObject {
 
     /// Every theme the picker shows: the imported ones first, because they are
     /// the ones the user just added, then the bundled catalog.
-    var all: [TerminalTheme] { imported + bundled }
+    var all: [TerminalTheme] {
+        imported + bundled
+    }
 
     /// Imported themes by identifier, for the file each one came from.
     private var fileURLs: [String: URL] = [:]
@@ -113,11 +114,15 @@ final class ThemeLibrary: ObservableObject {
         var importedNames: [String] = []
         var failures: [Failure] = []
 
-        var isEmpty: Bool { importedNames.isEmpty && failures.isEmpty }
+        var isEmpty: Bool {
+            importedNames.isEmpty && failures.isEmpty
+        }
 
         /// The first scheme that made it in, so the picker can select it and
         /// show the user what they just imported.
-        var firstImportedID: String? { importedIDs.first }
+        var firstImportedID: String? {
+            importedIDs.first
+        }
 
         /// One line for the picker's footer or an alert.
         var message: String {
@@ -126,7 +131,9 @@ final class ThemeLibrary: ObservableObject {
             }
 
             if failures.isEmpty {
-                if importedNames.count == 1 { return "Imported \(importedNames[0])." }
+                if importedNames.count == 1 {
+                    return "Imported \(importedNames[0])."
+                }
                 return "Imported \(list(importedNames))."
             }
 

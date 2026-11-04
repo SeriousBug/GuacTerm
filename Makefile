@@ -7,10 +7,17 @@
 #   make dist         Developer ID sign + notarize + staple -> dist/GuacTerm-<version>.zip
 #   make themes       regenerate Resources/Themes.json from the pinned upstream commit
 #   make themes-check fail if Resources/Themes.json does not match that commit
+#
+#   make setup-dev    install the git pre-commit hook (./setup-dev.sh)
+#   make format       reformat Sources/ and scripts/ in place (swiftformat)
+#   make lint         list style violations (swiftlint)
+#   make check        what the pre-commit hook runs: format + lint, no rewriting
 
 XCODEGEN ?= xcodegen
 
-.PHONY: project build run clean dist themes themes-check
+SWIFT_SOURCES = Sources scripts/generate-themes.swift
+
+.PHONY: project build run clean dist themes themes-check setup-dev format lint check
 
 project:
 	$(XCODEGEN) generate
@@ -32,3 +39,15 @@ themes:
 
 themes-check:
 	./scripts/themes.sh --check
+
+setup-dev:
+	./setup-dev.sh
+
+format:
+	swiftformat $(SWIFT_SOURCES)
+
+lint:
+	swiftlint lint --strict
+
+check:
+	./scripts/pre-commit.sh

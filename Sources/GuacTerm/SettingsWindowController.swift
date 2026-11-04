@@ -5,7 +5,6 @@ import SwiftUI
 /// accessory app, so this is the only conventional window it ever shows.
 @MainActor
 final class SettingsWindowController: NSWindowController, NSWindowDelegate {
-
     /// Called when the window closes, so the terminal can stop treating itself
     /// as a preview and go back to obeying the focus settings.
     var onClose: (() -> Void)?
@@ -49,7 +48,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     }
 
     @available(*, unavailable)
-    required init?(coder: NSCoder) {
+    required init?(coder _: NSCoder) {
         fatalError("init(coder:) is not supported")
     }
 
@@ -92,16 +91,15 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         )
     }
 
-    func windowWillClose(_ notification: Notification) {
+    func windowWillClose(_: Notification) {
         onClose?()
     }
 }
 
+@MainActor
 extension NSScreen {
-
     /// The screen the pointer is on, which is where GuacTerm puts its windows:
     /// the panel drops down there, so the settings window opens there too.
-    @MainActor
     static var underMouse: NSScreen {
         let mouse = NSEvent.mouseLocation
         return screens.first { NSMouseInRect(mouse, $0.frame, false) }

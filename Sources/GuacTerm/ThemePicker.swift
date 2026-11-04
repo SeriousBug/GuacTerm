@@ -22,7 +22,6 @@ import UniformTypeIdentifiers
 
 /// A searchable, live-applying list of every ``TerminalTheme`` the user has.
 struct ThemePicker: View {
-
     @ObservedObject var settings: Settings
     @ObservedObject var library: ThemeLibrary
 
@@ -50,7 +49,7 @@ struct ThemePicker: View {
     init(settings: Settings, library: ThemeLibrary) {
         self.settings = settings
         self.library = library
-        self.originalThemeID = settings.themeID
+        originalThemeID = settings.themeID
     }
 
     // MARK: - Body
@@ -272,8 +271,12 @@ struct ThemePicker: View {
     }
 
     private func background(isCurrent: Bool, isHovered: Bool) -> Color {
-        if isCurrent { return Color.accentColor.opacity(0.16) }
-        if isHovered { return Color.primary.opacity(0.07) }
+        if isCurrent {
+            return Color.accentColor.opacity(0.16)
+        }
+        if isHovered {
+            return Color.primary.opacity(0.07)
+        }
         return Color.clear
     }
 
@@ -386,8 +389,13 @@ struct ThemePicker: View {
         }
     }
 
-    private var importedMatches: [TerminalTheme] { matches.filter(library.isImported) }
-    private var bundledMatches: [TerminalTheme] { matches.filter { !library.isImported($0) } }
+    private var importedMatches: [TerminalTheme] {
+        matches.filter(library.isImported)
+    }
+
+    private var bundledMatches: [TerminalTheme] {
+        matches.filter { !library.isImported($0) }
+    }
 
     // MARK: - Actions
 
@@ -416,7 +424,7 @@ struct ThemePicker: View {
         // either way the panel filters on `.itermcolors` rather than on every
         // file on disk.
         panel.allowedContentTypes = [
-            UTType(filenameExtension: ITermColors.pathExtension) ?? .data
+            UTType(filenameExtension: ITermColors.pathExtension) ?? .data,
         ]
 
         guard panel.runModal() == .OK else { return }
@@ -427,7 +435,9 @@ struct ThemePicker: View {
     /// that made it in so the import is visible without hunting for it.
     private func apply(_ urls: [URL]) {
         let summary = library.importThemes(from: urls)
-        if summary.isEmpty { return }
+        if summary.isEmpty {
+            return
+        }
         notice = summary
         if let id = summary.firstImportedID {
             settings.themeID = id
@@ -447,7 +457,6 @@ struct ThemePicker: View {
 
 /// A miniature of the scheme: the background with a few accent colors on it.
 private struct ThemeChip: View {
-
     let theme: TerminalTheme
 
     /// ANSI 1-6, the colors a listing or a diff actually uses.
@@ -479,13 +488,12 @@ private struct ThemeChip: View {
 /// A full-width preview of the scheme being considered: the whole palette, then
 /// a prompt line with the cursor block, drawn on the scheme's own background.
 private struct ThemeSample: View {
-
     let theme: TerminalTheme
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 2) {
-                ForEach(0..<16, id: \.self) { index in
+                ForEach(0 ..< 16, id: \.self) { index in
                     RoundedRectangle(cornerRadius: 2, style: .continuous)
                         .fill(Color(nsColor: theme.nsAnsi[index]))
                         .frame(height: 10)

@@ -11,7 +11,6 @@
 //
 
 extension TerminalTheme {
-
     // MARK: - Signature themes
 
     /// GuacTerm's own dark scheme. Also the fallback for unknown identifiers
@@ -38,7 +37,7 @@ extension TerminalTheme {
             "#8CB9EE", // 12 bright blue
             "#DDA8EC", // 13 bright magenta
             "#8EE0D6", // 14 bright cyan
-            "#F4F1E8"  // 15 bright white
+            "#F4F1E8", // 15 bright white
         ]
     )
 
@@ -65,7 +64,7 @@ extension TerminalTheme {
             "#4A8AC9", // 12 bright blue
             "#A863B4", // 13 bright magenta
             "#35988E", // 14 bright cyan
-            "#2B3A33"  // 15 bright white
+            "#2B3A33", // 15 bright white
         ]
     )
 
