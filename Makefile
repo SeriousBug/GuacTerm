@@ -5,6 +5,7 @@
 #   make run          build, then launch
 #   make clean        remove build/ and dist/
 #   make dist         Developer ID sign + notarize + staple -> dist/GuacTerm-<version>.zip
+#   make dmg          build, then package dist/GuacTerm-<version>.dmg
 #   make icon         regenerate the app icon PNGs from Resources/logo.svg
 #   make themes       regenerate Resources/Themes.json from the pinned upstream commit
 #   make themes-check fail if Resources/Themes.json does not match that commit
@@ -19,7 +20,7 @@ XCODEGEN ?= xcodegen
 SWIFT_SOURCES = Sources scripts/generate-themes.swift
 SHELL_SOURCES = $(wildcard scripts/*.sh)
 
-.PHONY: project build run icon clean dist themes themes-check setup-dev format lint check
+.PHONY: project build run dmg icon clean dist themes themes-check setup-dev format lint check
 
 project:
 	$(XCODEGEN) generate
@@ -32,6 +33,9 @@ run: build
 
 clean:
 	rm -rf build dist
+
+dmg:
+	./scripts/dmg.sh
 
 icon:
 	./scripts/make-icon.sh

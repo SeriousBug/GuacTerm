@@ -24,6 +24,7 @@ Install XCode command line tools and [xcodegen](https://github.com/yonaskolb/Xco
 ```sh
 make project     # regenerate GuacTerm.xcodeproj from project.yml
 make run         # build and launch
+make dmg         # build and package a disk image in dist/
 ```
 
 Run `./scripts/setup-dev.sh` to install the pre-commit hook
