@@ -53,15 +53,90 @@ final class ThemeLibrary: ObservableObject {
     /// shadowing the other.
     static let importedIDPrefix = "imported-"
 
+    /// The identifier an imported scheme gets, from the name its file gives it:
+    /// `"Solarized Dark.itermcolors"` -> `"imported-solarized-dark-1m1k"`.
+    ///
+    /// The four characters at the end are a digest of the name, and they are
+    /// what keeps two schemes apart whose names differ but whose slugs do not
+    /// (`"Nord"` and `"Nord!"` both wanted `imported-nord`), and what a name
+    /// with no ASCII letters left over from the slug — `"日本語"` — is left
+    /// with. Hashing the name rather than the file keeps the identifier the
+    /// same across launches, which is what `UserDefaults` is pointing at.
+    static func importedID(for name: String) -> String {
+        let slug = ITermColors.slug(name)
+        let digest = digest(of: name)
+        return slug.isEmpty
+            ? importedIDPrefix + digest
+            : "\(importedIDPrefix)\(slug)-\(digest)"
+    }
+
+    /// Four base-36 characters of an FNV-1a hash of the name.
+    ///
+    /// `hashValue` cannot be used here: Swift seeds it per process, so the same
+    /// file would be handed a different identifier on every launch and the
+    /// selection would be lost each time the app started.
+    private static func digest(of name: String) -> String {
+        var hash: UInt32 = 2_166_136_261
+        for byte in name.utf8 {
+            hash ^= UInt32(byte)
+            hash &*= 16_777_619
+        }
+
+        // 36⁴, so the result is never longer than the four characters kept.
+        let base36 = String(hash % 1_679_616, radix: 36)
+        return String(repeating: "0", count: 4 - base36.count) + base36
+    }
+
     /// The themes that ship with the app, in catalog order.
     let bundled: [TerminalTheme]
 
     /// The themes the user imported, sorted by name.
     @Published private(set) var imported: [TerminalTheme] = []
 
-    /// Called after an import or a removal, so the open terminal can repaint:
-    /// the selected theme may now resolve to different colours, or to none.
-    var onChange: (() -> Void)?
+    /// Callbacks to run after an import or a removal, so the open terminal can
+    /// repaint: the selected theme may now resolve to different colours, or to
+    /// none.
+    ///
+    /// Registered rather than assigned. More than one observer is legitimate —
+    /// the settings model repaints, and a preview or a second window may want
+    /// the same news — and a single property meant whichever was set last
+    /// silently took the news away from every other one.
+    private var changeHandlers: [UUID: () -> Void] = [:]
+
+    /// Registers `handler` to run after the next import or removal.
+    ///
+    /// The returned token is only needed to withdraw it again with
+    /// ``removeOnChange(_:)``; keeping a registration for as long as the
+    /// observer lives is the normal case.
+    @discardableResult
+    func onChange(_ handler: @escaping () -> Void) -> UUID {
+        let token = UUID()
+        changeHandlers[token] = handler
+        return token
+    }
+
+    /// Stops calling a handler registered with ``onChange(_:)``.
+    ///
+    /// A model that is thrown away has to withdraw: registrations outlive it,
+    /// so a `[weak self]` capture would otherwise go on being called into
+    /// nothing for the rest of the process's life.
+    func removeOnChange(_ token: UUID) {
+        changeHandlers.removeValue(forKey: token)
+    }
+
+    /// How many handlers are registered.
+    ///
+    /// A registration outlives the object that made it unless that object
+    /// withdraws it, so this is what a leak of them shows up in.
+    var changeHandlerCount: Int {
+        changeHandlers.count
+    }
+
+    private func notifyChange() {
+        for handler in changeHandlers.values {
+            handler()
+        }
+    }
 
     /// Every theme the picker shows: the imported ones first, because they are
     /// the ones the user just added, then the bundled catalog.
@@ -214,7 +289,7 @@ final class ThemeLibrary: ObservableObject {
             .filter { importedNames.contains($0.name) }
             .map(\.id)
 
-        onChange?()
+        notifyChange()
         return summary
     }
 
@@ -241,7 +316,7 @@ final class ThemeLibrary: ObservableObject {
         }
 
         reload()
-        onChange?()
+        notifyChange()
         return true
     }
 
@@ -289,10 +364,11 @@ final class ThemeLibrary: ObservableObject {
                 continue
             }
 
-            var id = Self.importedIDPrefix + ITermColors.slug(scheme.name)
+            let baseID = Self.importedID(for: scheme.name)
+            var id = baseID
             var suffix = 2
             while !usedIDs.insert(id).inserted {
-                id = "\(Self.importedIDPrefix + ITermColors.slug(scheme.name))-\(suffix)"
+                id = "\(baseID)-\(suffix)"
                 suffix += 1
             }
 

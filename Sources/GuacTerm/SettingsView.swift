@@ -388,38 +388,29 @@ struct SettingsView: View {
     private var scrollbackBinding: Binding<Int> {
         Binding(
             get: { settings.scrollbackLines },
-            set: { settings.scrollbackLines = Self.clamp($0, to: Settings.Limits.scrollback) }
+            set: { settings.scrollbackLines = Settings.Limits.clamp($0, to: Settings.Limits.scrollback) }
         )
     }
 
     private var heightBinding: Binding<Double> {
         Binding(
             get: { settings.heightFraction },
-            set: { settings.heightFraction = Self.clamp($0, to: Settings.Limits.height) }
+            set: { settings.heightFraction = Settings.Limits.clamp($0, to: Settings.Limits.height) }
         )
     }
 
     private var fontSizeBinding: Binding<Double> {
         Binding(
             get: { settings.fontSize },
-            set: { settings.fontSize = Self.clamp($0, to: Settings.Limits.fontSize) }
+            set: { settings.fontSize = Settings.Limits.clamp($0, to: Settings.Limits.fontSize) }
         )
     }
 
     private var glassTintBinding: Binding<Double> {
         Binding(
             get: { settings.glassTint },
-            set: { settings.glassTint = Self.clamp($0, to: Settings.Limits.glassTint) }
+            set: { settings.glassTint = Settings.Limits.clamp($0, to: Settings.Limits.glassTint) }
         )
-    }
-
-    /// `ClosedRange.clamped(to:)` is not public API, so the limits are applied
-    /// by hand: a hand-edited `defaults write` must not reach the terminal.
-    private static func clamp<Value: Comparable>(
-        _ value: Value,
-        to limits: ClosedRange<Value>
-    ) -> Value {
-        min(max(value, limits.lowerBound), limits.upperBound)
     }
 
     /// `launchAtLogin` is `private(set)`: the system's registration has to be

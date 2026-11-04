@@ -57,14 +57,22 @@ enum ShellLaunch: Equatable, Sendable {
 final class Settings: ObservableObject {
     static let shared = Settings()
 
-    /// Ranges enforced by the UI and re-checked here, so a hand-edited
-    /// `defaults write` cannot produce a window taller than the screen.
+    /// Ranges enforced by the UI and re-checked on load, so a hand-edited
+    /// `defaults write` cannot produce a window taller than the screen, a font
+    /// the terminal cannot lay a grid out with, or a scrollback big enough to
+    /// cost real memory.
     enum Limits {
         static let scrollback = 0 ... 1_000_000
         static let height = 0.15 ... 1.0
         static let fontSize = 8.0 ... 48.0
         /// Below 20% the theme is barely there and text stops being readable.
         static let glassTint = 0.2 ... 1.0
+
+        /// `ClosedRange.clamped(to:)` is not public API, so the limits are
+        /// applied by hand.
+        static func clamp<Value: Comparable>(_ value: Value, to limits: ClosedRange<Value>) -> Value {
+            min(max(value, limits.lowerBound), limits.upperBound)
+        }
     }
 
     /// Liquid Glass arrived in macOS 26. On anything older the panel simply
@@ -280,20 +288,32 @@ final class Settings: ObservableObject {
     private let defaults: UserDefaults
     private var isLoading = false
 
+    /// Identifies this model's registration with ``ThemeLibrary/shared``, so it
+    /// can be withdrawn again in ``deinit``.
+    private var themeChangeToken: UUID?
+
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         isLoading = true
 
         shortcut = Self.loadShortcut(defaults) ?? .default
         shellPath = defaults.string(forKey: Key.shellPath.rawValue) ?? Self.accountLoginShell
-        scrollbackLines = defaults.object(forKey: Key.scrollbackLines.rawValue) as? Int ?? 10000
+        scrollbackLines = Self.loadedInt(
+            defaults, .scrollbackLines, limits: Limits.scrollback, fallback: 10000
+        )
         themeID = defaults.string(forKey: Key.themeID.rawValue) ?? TerminalTheme.defaultThemeID
-        heightFraction = defaults.object(forKey: Key.heightFraction.rawValue) as? Double ?? 0.45
+        heightFraction = Self.loadedDouble(
+            defaults, .heightFraction, limits: Limits.height, fallback: 0.45
+        )
         fontName = defaults.string(forKey: Key.fontName.rawValue) ?? Self.defaultFontName
-        fontSize = defaults.object(forKey: Key.fontSize.rawValue) as? Double ?? 13
+        fontSize = Self.loadedDouble(
+            defaults, .fontSize, limits: Limits.fontSize, fallback: 13
+        )
         hideOnFocusLoss = defaults.object(forKey: Key.hideOnFocusLoss.rawValue) as? Bool ?? true
         glassBackground = defaults.object(forKey: Key.glassBackground.rawValue) as? Bool ?? false
-        glassTint = defaults.object(forKey: Key.glassTint.rawValue) as? Double ?? 0.65
+        glassTint = Self.loadedDouble(
+            defaults, .glassTint, limits: Limits.glassTint, fallback: 0.65
+        )
         appearanceMode = defaults
             .string(forKey: Key.appearanceMode.rawValue)
             .flatMap(AppearanceMode.init(rawValue:)) ?? .system
@@ -305,9 +325,16 @@ final class Settings: ObservableObject {
         // replaced by an updated copy) and can disappear entirely (its file
         // moved to the Trash), so repaints follow the library rather than the
         // identifier alone.
-        ThemeLibrary.shared.onChange = { [weak self] in
+        themeChangeToken = ThemeLibrary.shared.onChange { [weak self] in
             self?.onAppearanceChange?()
         }
+    }
+
+    isolated deinit {
+        // The library outlives this model, so the registration has to be given
+        // back rather than left pointing at a `self` that is gone.
+        guard let themeChangeToken else { return }
+        ThemeLibrary.shared.removeOnChange(themeChangeToken)
     }
 
     private func persist() {
@@ -324,6 +351,34 @@ final class Settings: ObservableObject {
         defaults.set(glassTint, forKey: Key.glassTint.rawValue)
         defaults.set(launchAtLogin, forKey: Key.launchAtLogin.rawValue)
         defaults.set(appearanceMode.rawValue, forKey: Key.appearanceMode.rawValue)
+    }
+
+    /// A stored number brought back inside `limits`, or `fallback` when the key
+    /// holds nothing usable.
+    ///
+    /// The finite check is the part that is easy to miss: `min` and `max` hand
+    /// NaN straight back, so a height stored as `nan` would survive them, size
+    /// the panel to the whole screen, and leave no slider able to undo it.
+    private static func loadedDouble(
+        _ defaults: UserDefaults,
+        _ key: Key,
+        limits: ClosedRange<Double>,
+        fallback: Double
+    ) -> Double {
+        guard let stored = defaults.object(forKey: key.rawValue) as? Double,
+              stored.isFinite
+        else { return fallback }
+        return Limits.clamp(stored, to: limits)
+    }
+
+    private static func loadedInt(
+        _ defaults: UserDefaults,
+        _ key: Key,
+        limits: ClosedRange<Int>,
+        fallback: Int
+    ) -> Int {
+        guard let stored = defaults.object(forKey: key.rawValue) as? Int else { return fallback }
+        return Limits.clamp(stored, to: limits)
     }
 
     private static func loadShortcut(_ defaults: UserDefaults) -> KeyCombo? {
