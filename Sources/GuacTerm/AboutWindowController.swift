@@ -15,9 +15,10 @@ final class AboutWindowController: NSWindowController {
         window.isReleasedWhenClosed = false
         window.collectionBehavior.insert(.moveToActiveSpace)
 
-        // Two license panes need room to be worth scrolling. The height is kept
-        // within the screen it opens on, so a short display gets a smaller
-        // window rather than one whose top is under the menu bar.
+        // Big enough that a whole license is readable without the page's own
+        // scrolling being in the way. The height is kept within the screen it
+        // opens on, so a short display gets a smaller window rather than one
+        // whose top is under the menu bar.
         let visible = NSScreen.underMouse.visibleFrame
         let size = NSSize(
             width: max(560, min(680, visible.width - 60)),

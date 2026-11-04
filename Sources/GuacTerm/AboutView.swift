@@ -2,31 +2,27 @@ import AppKit
 import SwiftUI
 
 /// The About window: what the app is, the MIT license it is released under, and
-/// the notices of the third-party work it bundles or links.
+/// the notices of the third-party work it is built on.
 ///
-/// The two license areas are separate scrollers rather than one long page, so
-/// GuacTerm's own license stays in view while a third-party notice is read.
+/// The license texts are boxes of their own rather than one wall of text, so
+/// GuacTerm's license and each project's notice stay recognisably separate. The
+/// page is what scrolls: a box inside a scrolling page that scrolled by itself
+/// would be one scroll too many.
 struct AboutView: View {
-    /// The component whose notice the detail pane shows.
-    @State private var selectedComponentID = AboutContent.components[0].id
-
     private let padding: CGFloat = 22
-
-    /// Most of the MIT text without scrolling at the window's default size. It
-    /// scrolls for the rest, and for a window that was made smaller.
-    private let licensePaneHeight: CGFloat = 220
 
     // MARK: - Body
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            header
-            Divider()
-            licenseSection
-            Divider()
-            thirdPartySection
+        ScrollView(.vertical) {
+            VStack(alignment: .leading, spacing: 22) {
+                header
+                licenseSection
+                thirdPartySection
+            }
+            .padding(padding)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(padding)
     }
 
     private var header: some View {
@@ -67,15 +63,10 @@ struct AboutView: View {
                     .lineLimit(1)
                     .truncationMode(.middle)
                     .textSelection(.enabled)
+                sourceLink(AboutContent.sourceCode)
             }
 
-            Text(AboutContent.licenseSummary)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-
             licenseText(AboutContent.licenseText)
-                .frame(height: licensePaneHeight)
         }
     }
 
@@ -83,86 +74,89 @@ struct AboutView: View {
 
     private var thirdPartySection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text("Third-Party Licenses")
-                    .font(.headline)
-                Spacer(minLength: 12)
-                Text("\(AboutContent.components.count) components")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
+            Text("Third-Party Licenses")
+                .font(.headline)
 
             Text(AboutContent.thirdPartySummary)
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Picker("Component", selection: $selectedComponentID) {
+            VStack(alignment: .leading, spacing: 16) {
                 ForEach(AboutContent.components) { component in
-                    Text(component.name).tag(component.id)
+                    componentBlock(component)
                 }
             }
-            .labelsHidden()
-            .pickerStyle(.segmented)
-
-            componentDetail
-                .frame(maxHeight: .infinity)
         }
     }
 
-    private var componentDetail: some View {
-        let component = selectedComponent
-        return VStack(alignment: .leading, spacing: 6) {
+    /// One project: who it is and whose copyright it carries, then the license
+    /// itself.
+    private func componentBlock(_ component: AboutContent.Component) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(component.name)
+                    .font(.callout.weight(.semibold))
                 badge(component.licenseName)
-                Text(component.usage)
+                Spacer(minLength: 12)
+                Text(component.copyright)
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
-                Spacer(minLength: 8)
-                upstreamLink(component)
+                    .truncationMode(.middle)
+                    .textSelection(.enabled)
+                sourceLink(component.upstream)
             }
 
-            Text(component.copyright)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-                .textSelection(.enabled)
-
             if let notice = component.notice {
-                Text(notice)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .textSelection(.enabled)
+                noticeText(notice)
             }
 
             licenseText(component.licenseText)
-                .frame(minHeight: 80, maxHeight: .infinity)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
     }
 
     // MARK: - Pieces
 
+    /// A note about a component, as Markdown so the file it points at — the
+    /// scheme credits, say — can be a link right where it is named.
+    ///
+    /// The colors are set on the text itself rather than with `foregroundStyle`,
+    /// which would paint over the accent color and leave a link that reads as
+    /// one more sentence.
+    private func noticeText(_ markdown: String) -> some View {
+        var text = (try? AttributedString(markdown: markdown)) ?? AttributedString(markdown)
+        text.foregroundColor = .secondary
+
+        for range in text.runs.filter({ $0.link != nil }).map(\.range) {
+            text[range].foregroundColor = .accentColor
+            text[range].underlineStyle = .single
+        }
+
+        return Text(text)
+            .font(.caption)
+            .fixedSize(horizontal: false, vertical: true)
+            .textSelection(.enabled)
+    }
+
     /// The license itself, as selectable text in a box that reads like a
     /// document rather than like chrome.
     private func licenseText(_ text: String) -> some View {
-        ScrollView(.vertical) {
-            Text(text)
-                .font(.caption.monospaced())
-                .textSelection(.enabled)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(12)
-        }
-        .background(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(Color(nsColor: .textBackgroundColor))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .strokeBorder(Color(nsColor: .separatorColor))
-        )
+        Text(text)
+            .font(.caption.monospaced())
+            .textSelection(.enabled)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(12)
+            .background(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(Color(nsColor: .textBackgroundColor))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .strokeBorder(Color(nsColor: .separatorColor))
+            )
     }
 
     private func badge(_ text: String) -> some View {
@@ -174,28 +168,25 @@ struct AboutView: View {
             .background(Capsule().fill(.quaternary))
     }
 
+    /// A pointer at the project itself, for GuacTerm and for the work it is
+    /// built on alike.
     @ViewBuilder
-    private func upstreamLink(_ component: AboutContent.Component) -> some View {
-        if let url = URL(string: component.upstream) {
+    private func sourceLink(_ urlString: String) -> some View {
+        if let url = URL(string: urlString) {
             Link(destination: url) {
                 HStack(spacing: 3) {
-                    Text("Upstream")
+                    Text("Source code")
                     Image(systemName: "arrow.up.right")
                         .font(.caption2)
                 }
                 .font(.caption)
             }
-            .help(component.upstream)
+            .help(urlString)
         }
     }
 
     private var appIcon: NSImage {
         NSApp.applicationIconImage
             ?? NSWorkspace.shared.icon(forFile: Bundle.main.bundlePath)
-    }
-
-    private var selectedComponent: AboutContent.Component {
-        AboutContent.components.first { $0.id == selectedComponentID }
-            ?? AboutContent.components[0]
     }
 }

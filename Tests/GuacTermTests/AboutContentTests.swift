@@ -79,10 +79,17 @@ final class AboutContentTests: XCTestCase {
                 notices.contains(component.upstream),
                 "THIRD_PARTY_NOTICES.md does not mention \(component.upstream)"
             )
-            XCTAssertFalse(component.usage.isEmpty)
             XCTAssertFalse(component.licenseName.isEmpty)
             XCTAssertTrue(component.licenseText.contains(component.copyright))
         }
+    }
+
+    /// The window points at GuacTerm's own repository too, so the app it is
+    /// about is as easy to find as the work it is built on.
+    func testTheWindowLinksToGuacTermsOwnSource() throws {
+        let url = try XCTUnwrap(URL(string: AboutContent.sourceCode))
+        XCTAssertEqual(url.host(), "github.com")
+        XCTAssertEqual(url.pathComponents.count, 3, "expected a repository URL, got \(url)")
     }
 
     // MARK: - Helpers
