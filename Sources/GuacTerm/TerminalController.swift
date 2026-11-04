@@ -153,12 +153,7 @@ final class TerminalController: NSObject {
         animationGeneration += 1
         visible = true
 
-        let start = NSRect(
-            x: target.minX,
-            y: target.maxY,
-            width: target.width,
-            height: target.height
-        )
+        let start = Self.offscreenFrame(from: target)
         panel.setFrame(start, display: false)
 
         NSApp.activate()
@@ -176,12 +171,7 @@ final class TerminalController: NSObject {
         let generation = animationGeneration
 
         let current = panel.frame
-        let offscreen = NSRect(
-            x: current.minX,
-            y: current.maxY,
-            width: current.width,
-            height: current.height
-        )
+        let offscreen = Self.offscreenFrame(from: current)
 
         // NSAnimationContext calls this on the main thread when the animation
         // ends, so hopping back onto the main actor is a statement of fact.
@@ -292,16 +282,42 @@ final class TerminalController: NSObject {
     }
 
     private func frame(for screen: NSScreen) -> NSRect {
-        let visibleFrame = screen.visibleFrame
+        Self.frame(
+            forVisibleFrame: screen.visibleFrame,
+            heightFraction: settings.heightFraction
+        )
+    }
+
+    /// The frame the panel rests at on a screen: full width, flush with the top
+    /// of the visible area (below the menu bar, clear of the Dock) and as tall
+    /// as the height setting asks for.
+    ///
+    /// Resolved from the screen's visible frame alone so the size can be worked
+    /// out for any screen, without one having to exist.
+    static func frame(forVisibleFrame visibleFrame: NSRect, heightFraction: Double) -> NSRect {
         let height = max(
             120,
-            min(visibleFrame.height, visibleFrame.height * settings.heightFraction)
+            min(visibleFrame.height, visibleFrame.height * heightFraction)
         )
         return NSRect(
             x: visibleFrame.minX,
             y: visibleFrame.maxY - height,
             width: visibleFrame.width,
             height: height
+        )
+    }
+
+    /// Where the panel parks while it is away: directly above the screen's top
+    /// edge, so the slide is a vertical move of exactly the window's height.
+    ///
+    /// AppKit pulls windows back onto the screen during `setFrame`, which is
+    /// why ``DropDownPanel`` leaves `constrainFrameRect(_:to:)` alone.
+    static func offscreenFrame(from frame: NSRect) -> NSRect {
+        NSRect(
+            x: frame.minX,
+            y: frame.maxY,
+            width: frame.width,
+            height: frame.height
         )
     }
 
@@ -419,7 +435,10 @@ final class TerminalController: NSObject {
         sessionAlive = true
     }
 
-    private static func loginName(for program: String) -> String {
+    /// The `argv[0]` that makes a program behave as a login shell: the leading
+    /// dash is what tells `zsh` to read its startup files, so it is the
+    /// difference between the user's prompt and a bare one.
+    static func loginName(for program: String) -> String {
         "-" + (program as NSString).lastPathComponent
     }
 
