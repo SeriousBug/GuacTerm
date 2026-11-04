@@ -26,18 +26,21 @@ final class SettingsTests: XCTestCase {
         static let shortcut = "shortcut"
         static let shellPath = "shellPath"
         static let scrollbackLines = "scrollbackLines"
-        static let themeID = "themeID"
+        static let darkThemeID = "darkThemeID"
+        static let lightThemeID = "lightThemeID"
+        static let legacyThemeID = "themeID"
         static let heightFraction = "heightFraction"
         static let fontName = "fontName"
         static let fontSize = "fontSize"
         static let hideOnFocusLoss = "hideOnFocusLoss"
-        static let glassBackground = "glassBackground"
         static let glassTint = "glassTint"
+        static let legacyGlassBackground = "glassBackground"
         static let appearanceMode = "appearanceMode"
     }
 
-    /// The first launch of the app: no window taller than asked for, no glass,
-    /// a readable 13pt grid and the shortcut people are told about.
+    /// The first launch of the app: no window taller than asked for, no glass
+    /// darker than asked for, a readable 13pt grid and the shortcut people are
+    /// told about.
     func testAFreshInstallStartsWithTheDocumentedDefaults() throws {
         let subject = try makeSettingsSubject()
         let settings = subject.settings
@@ -47,9 +50,10 @@ final class SettingsTests: XCTestCase {
         XCTAssertEqual(settings.fontSize, 13)
         XCTAssertEqual(settings.glassTint, 0.65, accuracy: 0.000_001)
         XCTAssertTrue(settings.hideOnFocusLoss)
-        XCTAssertFalse(settings.glassBackground)
-        XCTAssertEqual(settings.themeID, "guac")
-        XCTAssertEqual(settings.themeID, TerminalTheme.defaultThemeID)
+        XCTAssertEqual(settings.darkThemeID, "guac")
+        XCTAssertEqual(settings.darkThemeID, TerminalTheme.defaultThemeID)
+        XCTAssertEqual(settings.lightThemeID, "guac-light")
+        XCTAssertEqual(settings.lightThemeID, TerminalTheme.defaultLightThemeID)
         XCTAssertEqual(settings.shortcut, .default)
         XCTAssertEqual(settings.appearanceMode, .system)
         XCTAssertEqual(settings.shellPath, Settings.accountLoginShell)
@@ -66,12 +70,12 @@ final class SettingsTests: XCTestCase {
         settings.shortcut = shortcut
         settings.shellPath = "/bin/sh"
         settings.scrollbackLines = 500
-        settings.themeID = "solarized-dark"
+        settings.darkThemeID = "solarized-dark"
+        settings.lightThemeID = "solarized-light"
         settings.heightFraction = 0.8
         settings.fontName = "Menlo"
         settings.fontSize = 15.5
         settings.hideOnFocusLoss = false
-        settings.glassBackground = true
         settings.glassTint = 0.4
         settings.appearanceMode = .dark
 
@@ -80,12 +84,12 @@ final class SettingsTests: XCTestCase {
         XCTAssertEqual(relaunched.shortcut, shortcut)
         XCTAssertEqual(relaunched.shellPath, "/bin/sh")
         XCTAssertEqual(relaunched.scrollbackLines, 500)
-        XCTAssertEqual(relaunched.themeID, "solarized-dark")
+        XCTAssertEqual(relaunched.darkThemeID, "solarized-dark")
+        XCTAssertEqual(relaunched.lightThemeID, "solarized-light")
         XCTAssertEqual(relaunched.heightFraction, 0.8, accuracy: 0.000_001)
         XCTAssertEqual(relaunched.fontName, "Menlo")
         XCTAssertEqual(relaunched.fontSize, 15.5)
         XCTAssertFalse(relaunched.hideOnFocusLoss)
-        XCTAssertTrue(relaunched.glassBackground)
         XCTAssertEqual(relaunched.glassTint, 0.4, accuracy: 0.000_001)
         XCTAssertEqual(relaunched.appearanceMode, .dark)
     }
@@ -216,10 +220,10 @@ final class SettingsTests: XCTestCase {
         settings.onWindowGeometryChange = { geometry += 1 }
         settings.onAppearanceModeChange = { _ in mode += 1 }
 
-        settings.themeID = "solarized-dark"
+        settings.darkThemeID = "solarized-dark"
+        settings.lightThemeID = "solarized-light"
         settings.fontName = "Menlo"
         settings.fontSize = 14
-        settings.glassBackground = true
         settings.glassTint = 0.5
 
         XCTAssertEqual(appear, 5)
@@ -271,7 +275,9 @@ final class SettingsTests: XCTestCase {
     }
 
     /// The app's own chrome follows the appearance picker, and it is told which
-    /// mode to apply rather than being left to read it back.
+    /// mode to apply rather than being left to read it back. The terminal is
+    /// repainted as well: the mode is what decides which of the two schemes it
+    /// is painted with.
     func testTheAppearanceModeCallbackCarriesTheChosenMode() throws {
         let subject = try makeSettingsSubject()
         let settings = subject.settings
@@ -285,7 +291,50 @@ final class SettingsTests: XCTestCase {
 
         XCTAssertEqual(received, .light)
         XCTAssertEqual(settings.appearanceMode, .light)
-        XCTAssertEqual(appear, 0)
+        XCTAssertEqual(appear, 1)
+    }
+
+    /// A light appearance paints the light scheme and a dark one the dark
+    /// scheme. "Auto" is resolved against the system, so both of its slots have
+    /// to be ready rather than one of them being the only one that exists.
+    func testTheAppearanceDecidesWhichSchemeIsInEffect() throws {
+        let subject = try makeSettingsSubject()
+        let settings = subject.settings
+
+        settings.darkThemeID = TerminalTheme.guac.id
+        settings.lightThemeID = TerminalTheme.guacLight.id
+
+        settings.appearanceMode = .dark
+        XCTAssertEqual(settings.themeSlot, .dark)
+        XCTAssertEqual(settings.theme.id, TerminalTheme.guac.id)
+
+        settings.appearanceMode = .light
+        XCTAssertEqual(settings.themeSlot, .light)
+        XCTAssertEqual(settings.theme.id, TerminalTheme.guacLight.id)
+
+        settings.appearanceMode = .system
+        XCTAssertEqual(
+            settings.themeSlot,
+            settings.theme.isLight ? .light : .dark,
+            "Auto has to follow the system, whichever way it is set"
+        )
+    }
+
+    /// A domain from before there were two slots holds one scheme. It belongs to
+    /// the slot it was picked for, and the other slot keeps its default instead
+    /// of turning dark mode light.
+    func testASingleStoredThemeIsMigratedToTheSlotItWasPickedFor() throws {
+        let dark = try TemporaryDefaults()
+        dark.defaults.set("solarized-dark", forKey: StoredKey.legacyThemeID)
+        let fromDark = Settings(defaults: dark.defaults)
+        XCTAssertEqual(fromDark.darkThemeID, "solarized-dark")
+        XCTAssertEqual(fromDark.lightThemeID, TerminalTheme.defaultLightThemeID)
+
+        let light = try TemporaryDefaults()
+        light.defaults.set(TerminalTheme.guacLight.id, forKey: StoredKey.legacyThemeID)
+        let fromLight = Settings(defaults: light.defaults)
+        XCTAssertEqual(fromLight.lightThemeID, TerminalTheme.guacLight.id)
+        XCTAssertEqual(fromLight.darkThemeID, TerminalTheme.defaultThemeID)
     }
 
     /// Picking the value that is already set is still an event: the callback is
@@ -302,7 +351,7 @@ final class SettingsTests: XCTestCase {
 
         var appear = 0
         settings.onAppearanceChange = { appear += 1 }
-        settings.themeID = TerminalTheme.defaultThemeID
+        settings.darkThemeID = TerminalTheme.defaultThemeID
         XCTAssertEqual(appear, 1)
 
         var geometry = 0
@@ -312,16 +361,46 @@ final class SettingsTests: XCTestCase {
     }
 
     /// Glass is a request, not a guarantee: the setting has to stay honest about
-    /// what the running system will actually draw.
-    func testUsesGlassNeedsBothTheSettingAndTheSystem() throws {
+    /// what the running system will actually draw. A fully opaque tint is how
+    /// the effect is switched off, so there is no second toggle to disagree
+    /// with the slider.
+    func testGlassNeedsBothTheSystemAndATranslucentTint() throws {
         let subject = try makeSettingsSubject()
         let settings = subject.settings
 
-        settings.glassBackground = false
+        settings.glassTint = 1
         XCTAssertFalse(settings.usesGlass)
 
-        settings.glassBackground = true
+        settings.glassTint = 0.65
         XCTAssertEqual(settings.usesGlass, Settings.glassIsSupported)
+    }
+
+    /// A domain from when the glass had its own switch: turning it off has to
+    /// survive as a fully opaque tint, and turning it on has to leave the tint
+    /// that was stored. Either way the old key goes, so the slider is the only
+    /// thing that decides from then on.
+    func testTheOldGlassSwitchBecomesATint() throws {
+        let off = try TemporaryDefaults()
+        off.defaults.set(false, forKey: StoredKey.legacyGlassBackground)
+        off.defaults.set(0.65, forKey: StoredKey.glassTint)
+
+        let opaque = Settings(defaults: off.defaults)
+        XCTAssertEqual(opaque.glassTint, Settings.Limits.glassTint.upperBound)
+        XCTAssertFalse(opaque.usesGlass)
+        XCTAssertNil(off.defaults.object(forKey: StoredKey.legacyGlassBackground))
+        XCTAssertEqual(
+            off.defaults.object(forKey: StoredKey.glassTint) as? Double,
+            Settings.Limits.glassTint.upperBound,
+            "the tint the migration chose has to be the one that comes back"
+        )
+
+        let on = try TemporaryDefaults()
+        on.defaults.set(true, forKey: StoredKey.legacyGlassBackground)
+        on.defaults.set(0.65, forKey: StoredKey.glassTint)
+
+        let translucent = Settings(defaults: on.defaults)
+        XCTAssertEqual(translucent.glassTint, 0.65, accuracy: 0.000_001)
+        XCTAssertNil(on.defaults.object(forKey: StoredKey.legacyGlassBackground))
     }
 
     /// The terminal is only ever handed a complete palette, so a selected theme

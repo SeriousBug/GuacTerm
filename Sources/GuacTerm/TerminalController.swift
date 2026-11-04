@@ -107,6 +107,13 @@ final class TerminalController: NSObject {
         settings.onWindowGeometryChange = { [weak self] in
             self?.applyWindowHeight()
         }
+        // While the appearance is "Auto" the scheme follows the system, so a
+        // switch between light and dark has to repaint the terminal. It is the
+        // view's own appearance that changes first, hence this rather than a
+        // notification AppKit does not post.
+        container.onEffectiveAppearanceChange = { [weak self] in
+            self?.applyAppearance()
+        }
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(screenParametersChanged),

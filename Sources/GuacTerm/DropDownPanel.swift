@@ -45,6 +45,11 @@ final class DropDownContainerView: NSView {
         }
     }
 
+    /// Called when the appearance this view inherits changes, which is how a
+    /// switch between light and dark reaches the terminal: with two schemes
+    /// selected, that is what decides which one it is painted with.
+    var onEffectiveAppearanceChange: (() -> Void)?
+
     override var isOpaque: Bool {
         false
     }
@@ -60,5 +65,10 @@ final class DropDownContainerView: NSView {
     @available(*, unavailable)
     required init?(coder _: NSCoder) {
         fatalError("init(coder:) is not supported")
+    }
+
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        onEffectiveAppearanceChange?()
     }
 }

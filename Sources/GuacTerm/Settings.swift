@@ -1,37 +1,6 @@
 import AppKit
 import ServiceManagement
 
-/// How GuacTerm's own windows and menus look.
-///
-/// This is chrome only: the terminal itself is coloured by the selected theme,
-/// so a light theme in a dark app (or the reverse) stays possible.
-enum AppearanceMode: String, CaseIterable, Identifiable, Sendable {
-    case system
-    case light
-    case dark
-
-    var id: String {
-        rawValue
-    }
-
-    var label: String {
-        switch self {
-        case .system: "System"
-        case .light: "Light"
-        case .dark: "Dark"
-        }
-    }
-
-    /// `nil` means "follow the system".
-    var nsAppearance: NSAppearance? {
-        switch self {
-        case .system: nil
-        case .light: NSAppearance(named: .aqua)
-        case .dark: NSAppearance(named: .darkAqua)
-        }
-    }
-}
-
 /// What a new session runs, worked out from the Shell setting.
 ///
 /// The setting takes either a program or a whole command line, because the two
@@ -111,8 +80,16 @@ final class Settings: ObservableObject {
         }
     }
 
-    /// Identifier of the selected `TerminalTheme`.
-    @Published var themeID: String {
+    /// Identifier of the `TerminalTheme` used while the appearance is dark.
+    @Published var darkThemeID: String {
+        didSet {
+            persist()
+            onAppearanceChange?()
+        }
+    }
+
+    /// Identifier of the `TerminalTheme` used while the appearance is light.
+    @Published var lightThemeID: String {
         didSet {
             persist()
             onAppearanceChange?()
@@ -143,11 +120,14 @@ final class Settings: ObservableObject {
         }
     }
 
-    /// Look of GuacTerm's windows and menus.
+    /// Look of GuacTerm's windows and menus, and of the terminal.
     @Published var appearanceMode: AppearanceMode {
         didSet {
             persist()
+            // The chrome first: which scheme the terminal should paint is read
+            // back from the appearance this sets.
             onAppearanceModeChange?(appearanceMode)
+            onAppearanceChange?()
         }
     }
 
@@ -156,17 +136,9 @@ final class Settings: ObservableObject {
         didSet { persist() }
     }
 
-    /// Draw the terminal on macOS's Liquid Glass material instead of a solid
-    /// theme background. Ignored on systems without `NSGlassEffectView`.
-    @Published var glassBackground: Bool {
-        didSet {
-            persist()
-            onAppearanceChange?()
-        }
-    }
-
-    /// How much of the theme background is painted over that glass: 1 is
-    /// effectively solid, 0.2 lets the desktop through almost untouched.
+    /// How much of the theme background is painted over the Liquid Glass
+    /// material: 1 is fully opaque, which is how the glass is switched off.
+    /// Ignored on systems without `NSGlassEffectView`.
     @Published var glassTint: Double {
         didSet {
             persist()
@@ -174,9 +146,10 @@ final class Settings: ObservableObject {
         }
     }
 
-    /// True only when the user asked for glass *and* the system can draw it.
+    /// True only when the system can draw Liquid Glass and the tint leaves
+    /// something of it showing.
     var usesGlass: Bool {
-        glassBackground && Self.glassIsSupported
+        Self.glassIsSupported && glassTint < 1
     }
 
     /// Start GuacTerm when the user logs in. Change it through
@@ -208,11 +181,50 @@ final class Settings: ObservableObject {
 
     // MARK: - Derived
 
-    /// The selected theme, resolved against the bundled catalog *and* the
-    /// schemes the user imported, falling back to the default theme when the
-    /// identifier points at a theme whose file has since been removed.
+    /// The scheme the appearance puts in effect right now.
     var theme: TerminalTheme {
-        ThemeLibrary.shared.theme(id: themeID)
+        theme(for: themeSlot)
+    }
+
+    /// Which of the two schemes the appearance puts in effect.
+    var themeSlot: ThemeSlot {
+        switch appearanceMode {
+        case .dark: .dark
+        case .light: .light
+        case .system: Self.systemIsDark ? .dark : .light
+        }
+    }
+
+    /// True while the system GuacTerm follows is drawing in dark mode.
+    ///
+    /// The app's own effective appearance rather than a defaults lookup: it is
+    /// what the windows around the terminal already use, and it carries a
+    /// forced appearance when the user picked one.
+    private static var systemIsDark: Bool {
+        NSApplication.shared.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+    }
+
+    /// The identifier selected for a slot.
+    func themeID(for slot: ThemeSlot) -> String {
+        switch slot {
+        case .light: lightThemeID
+        case .dark: darkThemeID
+        }
+    }
+
+    /// Selects the scheme for one slot.
+    func setThemeID(_ id: String, for slot: ThemeSlot) {
+        switch slot {
+        case .light: lightThemeID = id
+        case .dark: darkThemeID = id
+        }
+    }
+
+    /// A slot's scheme, resolved against the bundled catalog *and* the schemes
+    /// the user imported, falling back to that slot's default when the
+    /// identifier points at a theme whose file has since been removed.
+    func theme(for slot: ThemeSlot) -> TerminalTheme {
+        ThemeLibrary.shared.theme(id: themeID(for: slot), fallback: slot.defaultThemeID)
     }
 
     /// The `NSFont` handed to SwiftTerm.
@@ -274,13 +286,18 @@ final class Settings: ObservableObject {
         case shortcut
         case shellPath
         case scrollbackLines
-        case themeID
+        case darkThemeID
+        case lightThemeID
+        /// The single scheme older versions stored. Read once to seed the two
+        /// slots and never written again.
+        case legacyThemeID = "themeID"
         case heightFraction
         case fontName
         case fontSize
         case hideOnFocusLoss
-        case glassBackground
         case glassTint
+        /// The switch Liquid Glass used to have. Read once, then removed.
+        case legacyGlassBackground = "glassBackground"
         case launchAtLogin
         case appearanceMode
     }
@@ -301,7 +318,19 @@ final class Settings: ObservableObject {
         scrollbackLines = Self.loadedInt(
             defaults, .scrollbackLines, limits: Limits.scrollback, fallback: 10000
         )
-        themeID = defaults.string(forKey: Key.themeID.rawValue) ?? TerminalTheme.defaultThemeID
+
+        // A single scheme was stored before there were two slots. It goes to the
+        // slot it was picked for, which is what leaves the other one at its
+        // default instead of opening dark mode in a white terminal.
+        let legacyThemeID = defaults.string(forKey: Key.legacyThemeID.rawValue)
+        let legacyIsLight = legacyThemeID.map { ThemeLibrary.shared.theme(id: $0).isLight } ?? false
+        darkThemeID = defaults.string(forKey: Key.darkThemeID.rawValue)
+            ?? (legacyIsLight ? nil : legacyThemeID)
+            ?? ThemeSlot.dark.defaultThemeID
+        lightThemeID = defaults.string(forKey: Key.lightThemeID.rawValue)
+            ?? (legacyIsLight ? legacyThemeID : nil)
+            ?? ThemeSlot.light.defaultThemeID
+
         heightFraction = Self.loadedDouble(
             defaults, .heightFraction, limits: Limits.height, fallback: 0.45
         )
@@ -310,10 +339,24 @@ final class Settings: ObservableObject {
             defaults, .fontSize, limits: Limits.fontSize, fallback: 13
         )
         hideOnFocusLoss = defaults.object(forKey: Key.hideOnFocusLoss.rawValue) as? Bool ?? true
-        glassBackground = defaults.object(forKey: Key.glassBackground.rawValue) as? Bool ?? false
-        glassTint = Self.loadedDouble(
+
+        // Liquid Glass used to be a switch with a tint of its own. The tint is
+        // now the switch, so a terminal that had the glass turned off is given a
+        // fully opaque one rather than being repainted with an effect the user
+        // declined. The old key is consumed here, so the slider decides alone
+        // from this launch on.
+        let legacyGlass = defaults.object(forKey: Key.legacyGlassBackground.rawValue) as? Bool
+        var tint = Self.loadedDouble(
             defaults, .glassTint, limits: Limits.glassTint, fallback: 0.65
         )
+        if legacyGlass == false {
+            tint = Limits.glassTint.upperBound
+            defaults.set(tint, forKey: Key.glassTint.rawValue)
+        }
+        if legacyGlass != nil {
+            defaults.removeObject(forKey: Key.legacyGlassBackground.rawValue)
+        }
+        glassTint = tint
         appearanceMode = defaults
             .string(forKey: Key.appearanceMode.rawValue)
             .flatMap(AppearanceMode.init(rawValue:)) ?? .system
@@ -321,10 +364,10 @@ final class Settings: ObservableObject {
 
         isLoading = false
 
-        // A theme can change without `themeID` changing (an imported file
+        // A theme can change without an identifier changing (an imported file
         // replaced by an updated copy) and can disappear entirely (its file
         // moved to the Trash), so repaints follow the library rather than the
-        // identifier alone.
+        // identifiers alone.
         themeChangeToken = ThemeLibrary.shared.onChange { [weak self] in
             self?.onAppearanceChange?()
         }
@@ -342,12 +385,12 @@ final class Settings: ObservableObject {
         defaults.set(try? JSONEncoder().encode(shortcut), forKey: Key.shortcut.rawValue)
         defaults.set(shellPath, forKey: Key.shellPath.rawValue)
         defaults.set(scrollbackLines, forKey: Key.scrollbackLines.rawValue)
-        defaults.set(themeID, forKey: Key.themeID.rawValue)
+        defaults.set(darkThemeID, forKey: Key.darkThemeID.rawValue)
+        defaults.set(lightThemeID, forKey: Key.lightThemeID.rawValue)
         defaults.set(heightFraction, forKey: Key.heightFraction.rawValue)
         defaults.set(fontName, forKey: Key.fontName.rawValue)
         defaults.set(fontSize, forKey: Key.fontSize.rawValue)
         defaults.set(hideOnFocusLoss, forKey: Key.hideOnFocusLoss.rawValue)
-        defaults.set(glassBackground, forKey: Key.glassBackground.rawValue)
         defaults.set(glassTint, forKey: Key.glassTint.rawValue)
         defaults.set(launchAtLogin, forKey: Key.launchAtLogin.rawValue)
         defaults.set(appearanceMode.rawValue, forKey: Key.appearanceMode.rawValue)

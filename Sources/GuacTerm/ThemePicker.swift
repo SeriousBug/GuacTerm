@@ -22,8 +22,14 @@ import UniformTypeIdentifiers
 
 /// A searchable, live-applying list of every ``TerminalTheme`` the user has.
 struct ThemePicker: View {
-    @ObservedObject var settings: Settings
     @ObservedObject var library: ThemeLibrary
+
+    /// The selection being edited: there is one of these sheets per scheme.
+    let slot: ThemeSlot
+
+    /// The identifier the sheet reads and writes, so browsing recolors the
+    /// terminal behind it as it goes.
+    @Binding var themeID: String
 
     @Environment(\.dismiss) private var dismiss
 
@@ -46,10 +52,16 @@ struct ThemePicker: View {
     private static let width: CGFloat = 560
     private static let height: CGFloat = 580
 
-    init(settings: Settings, library: ThemeLibrary) {
-        self.settings = settings
+    init(library: ThemeLibrary, slot: ThemeSlot, themeID: Binding<String>) {
         self.library = library
-        originalThemeID = settings.themeID
+        self.slot = slot
+        _themeID = themeID
+        originalThemeID = themeID.wrappedValue
+    }
+
+    /// The scheme the sheet is showing a sample of.
+    private var theme: TerminalTheme {
+        library.theme(id: themeID, fallback: slot.defaultThemeID)
     }
 
     // MARK: - Body
@@ -82,7 +94,7 @@ struct ThemePicker: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .center, spacing: 10) {
-                Text("Themes")
+                Text(slot.label)
                     .font(.title2.weight(.semibold))
                 Spacer()
                 Text(countDescription)
@@ -178,7 +190,7 @@ struct ThemePicker: View {
                 // LazyVStack only builds the rows around the viewport, so the
                 // current theme has to be asked for after the first layout pass.
                 try? await Task.sleep(for: .milliseconds(60))
-                proxy.scrollTo(settings.themeID, anchor: .center)
+                proxy.scrollTo(themeID, anchor: .center)
             }
         }
     }
@@ -220,11 +232,11 @@ struct ThemePicker: View {
     }
 
     private func rowBody(_ theme: TerminalTheme) -> some View {
-        let isCurrent = theme.id == settings.themeID
+        let isCurrent = theme.id == themeID
         let isHovered = theme.id == hoveredThemeID
 
         return Button {
-            settings.themeID = theme.id
+            themeID = theme.id
         } label: {
             HStack(spacing: 10) {
                 ThemeChip(theme: theme)
@@ -317,19 +329,19 @@ struct ThemePicker: View {
 
     private var footer: some View {
         VStack(alignment: .leading, spacing: 12) {
-            ThemeSample(theme: settings.theme)
+            ThemeSample(theme: theme)
 
             noticeLine
 
             HStack(spacing: 10) {
-                Text(settings.theme.name)
+                Text(theme.name)
                     .font(.callout.weight(.medium))
-                if settings.theme.isLight {
+                if theme.isLight {
                     Text("Light")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-                if library.isImported(settings.theme) {
+                if library.isImported(theme) {
                     Text("Imported")
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -337,9 +349,9 @@ struct ThemePicker: View {
 
                 Spacer()
 
-                if library.isImported(settings.theme) {
+                if library.isImported(theme) {
                     Button("Remove") {
-                        remove(settings.theme)
+                        remove(theme)
                     }
                     .help("Move the scheme's file from ~/Library/Application Support/GuacTerm/Themes to the Trash")
                 }
@@ -402,12 +414,12 @@ struct ThemePicker: View {
     /// Enter picks the first match, which makes "type, Enter" the fast path.
     private func selectFirstMatch() {
         guard let first = matches.first else { return }
-        settings.themeID = first.id
+        themeID = first.id
     }
 
     private func cancel() {
-        if settings.themeID != originalThemeID {
-            settings.themeID = originalThemeID
+        if themeID != originalThemeID {
+            themeID = originalThemeID
         }
         dismiss()
     }
@@ -440,15 +452,15 @@ struct ThemePicker: View {
         }
         notice = summary
         if let id = summary.firstImportedID {
-            settings.themeID = id
+            themeID = id
         }
     }
 
     private func remove(_ theme: TerminalTheme) {
         guard library.remove(theme) else { return }
         notice = nil
-        if settings.themeID == theme.id {
-            settings.themeID = TerminalTheme.defaultThemeID
+        if themeID == theme.id {
+            themeID = slot.defaultThemeID
         }
     }
 }

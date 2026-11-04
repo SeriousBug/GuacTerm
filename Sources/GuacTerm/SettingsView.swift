@@ -20,8 +20,8 @@ struct SettingsView: View {
     @State private var shellPaths: [String] = []
     @State private var fontFamilies: [String] = []
 
-    /// Presents ``ThemePicker`` as a sheet.
-    @State private var showingThemePicker = false
+    /// The slot whose theme sheet is open, so one sheet serves both selections.
+    @State private var showingThemePickerFor: ThemeSlot?
 
     private let padding: CGFloat = 22
 
@@ -44,36 +44,41 @@ struct SettingsView: View {
         .onAppear {
             loadSystemLists()
             if showsThemePickerOnAppear {
-                showingThemePicker = true
+                showingThemePickerFor = settings.themeSlot
             }
         }
-        .sheet(isPresented: $showingThemePicker) {
-            ThemePicker(settings: settings, library: library)
+        .sheet(item: $showingThemePickerFor) { slot in
+            ThemePicker(library: library, slot: slot, themeID: themeIDBinding(slot))
         }
     }
 
     // MARK: - Header and footer
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 3) {
-            Text(AppInfo.name)
-                .font(.largeTitle.weight(.semibold))
-            Text(AppInfo.tagline)
-                .font(.callout)
-                .foregroundStyle(.secondary)
+        HStack(alignment: .center, spacing: 16) {
+            Image(nsImage: appIcon)
+                .resizable()
+                .interpolation(.high)
+                .frame(width: 56, height: 56)
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(AppInfo.name)
+                    .font(.largeTitle.weight(.semibold))
+                Text(AppInfo.tagline)
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer(minLength: 0)
         }
     }
 
     private var footer: some View {
-        VStack(spacing: 4) {
-            Text("No tabs. No splits. Run tmux or zellij inside the terminal.")
-            Text(AppInfo.versionDescription)
-        }
-        .font(.caption)
-        .foregroundStyle(.secondary)
-        .multilineTextAlignment(.center)
-        .frame(maxWidth: .infinity, alignment: .center)
-        .padding(.top, 20)
+        Text(AppInfo.versionDescription)
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity, alignment: .center)
+            .padding(.top, 20)
     }
 
     // MARK: - Rows
@@ -86,7 +91,7 @@ struct SettingsView: View {
             shellRow
             Divider()
 
-            row("Scrollback", caption: "Applies to the next session.") {
+            row("Scrollback", caption: "Restart for changes to take effect.") {
                 scrollbackControls
             }
             Divider()
@@ -101,10 +106,7 @@ struct SettingsView: View {
             }
             Divider()
 
-            row(
-                "Appearance",
-                caption: "Terminal colors come from the theme below."
-            ) {
+            row("Appearance") {
                 Picker("Appearance", selection: $settings.appearanceMode) {
                     ForEach(AppearanceMode.allCases) { mode in
                         Text(mode.label).tag(mode)
@@ -116,18 +118,18 @@ struct SettingsView: View {
             }
             Divider()
 
-            themeRow
+            themeRow(.dark)
             Divider()
 
-            glassRows
+            themeRow(.light)
+            Divider()
+
+            glassRow
             Divider()
 
             row(
                 "Hide When Focus Is Lost",
-                caption: """
-                Drop the terminal away when you switch to another app. While Settings \
-                is open it stays put, so changes can be previewed.
-                """
+                caption: "Hide terminal away when you switch to another app."
             ) {
                 Toggle("Hide When Focus Is Lost", isOn: $settings.hideOnFocusLoss)
                     .labelsHidden()
@@ -135,7 +137,7 @@ struct SettingsView: View {
             }
             Divider()
 
-            row("Launch at Login", caption: "Start GuacTerm when you log in.") {
+            row("Launch at Login") {
                 Toggle("Launch at Login", isOn: launchAtLoginBinding)
                     .labelsHidden()
                     .toggleStyle(.switch)
@@ -176,75 +178,80 @@ struct SettingsView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    /// The catalog holds ~890 schemes, so the menu is only ever a button: the
-    /// list itself lives in the ``ThemePicker`` sheet, which is also where a
-    /// theme is imported from a `.itermcolors` file.
-    private var themeRow: some View {
-        VStack(alignment: .leading, spacing: 10) {
+    /// One of the two scheme selections. The catalog holds ~890 schemes, so the
+    /// menu is only ever a button: the list itself lives in the ``ThemePicker``
+    /// sheet, which is also where a theme is imported from a `.itermcolors` file.
+    ///
+    /// The slot the appearance does not put in effect is disabled rather than
+    /// hidden, so the pair stays where the eye left it.
+    private func themeRow(_ slot: ThemeSlot) -> some View {
+        let applies = slotApplies(slot)
+        let theme = settings.theme(for: slot)
+        let help = "Browse all \(library.all.count) themes, or import your own"
+
+        return VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 16) {
-                Text("Theme")
+                Text(slot.label)
                     .fixedSize()
                 Spacer(minLength: 12)
                 Button {
-                    showingThemePicker = true
+                    showingThemePickerFor = slot
                 } label: {
                     HStack(spacing: 4) {
-                        Text(settings.theme.name)
+                        Text(theme.name)
                         Image(systemName: "chevron.up.chevron.down")
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                     }
                 }
-                .help("Browse all \(library.all.count) themes, or import your own")
+                .help(help)
             }
 
-            ThemePreview(theme: settings.theme)
+            ThemePreview(theme: theme)
                 .contentShape(Rectangle())
-                .onTapGesture { showingThemePicker = true }
-                .help("Browse all \(library.all.count) themes, or import your own")
+                .onTapGesture {
+                    if applies {
+                        showingThemePickerFor = slot
+                    }
+                }
+                .help(help)
         }
         .padding(.vertical, 11)
         .frame(maxWidth: .infinity, alignment: .leading)
+        .disabled(!applies)
+        .opacity(applies ? 1 : 0.5)
     }
 
-    /// Liquid Glass needs macOS 26, so on older systems these rows are simply
-    /// absent rather than shown greyed out.
-    @ViewBuilder
-    private var glassRows: some View {
-        if Settings.glassIsSupported {
-            VStack(alignment: .leading, spacing: 0) {
-                row(
-                    "Liquid Glass",
-                    caption: settings.glassBackground
-                        ? """
-                        The theme is painted over macOS's glass material, \
-                        so the desktop shows through as it moves behind it.
-                        """
-                        : "Put the terminal on macOS's Liquid Glass material instead of a solid background."
-                ) {
-                    Toggle("Liquid Glass", isOn: $settings.glassBackground)
-                        .labelsHidden()
-                        .toggleStyle(.switch)
-                }
+    /// Whether the appearance puts a slot in effect. "Auto" keeps both: the
+    /// system may turn to either one at any time.
+    private func slotApplies(_ slot: ThemeSlot) -> Bool {
+        switch settings.appearanceMode {
+        case .system: true
+        case .light: slot == .light
+        case .dark: slot == .dark
+        }
+    }
 
-                if settings.glassBackground {
-                    Divider()
-                    row(
-                        "Glass Tint",
-                        caption: """
-                        How much of the theme covers the glass. Lower shows more of the desktop, \
-                        and is harder to read on busy backgrounds.
-                        """
-                    ) {
-                        HStack(spacing: 10) {
-                            Slider(value: glassTintBinding, in: Settings.Limits.glassTint)
-                                .frame(width: 190)
-                            Text(settings.glassTint, format: .percent.precision(.fractionLength(0)))
-                                .monospacedDigit()
-                                .foregroundStyle(.secondary)
-                                .frame(width: 44, alignment: .trailing)
-                        }
-                    }
+    /// Liquid Glass needs macOS 26, so on older systems the row is simply absent
+    /// rather than shown greyed out. A fully opaque tint is how it is switched
+    /// off, which is why there is no toggle of its own.
+    @ViewBuilder
+    private var glassRow: some View {
+        if Settings.glassIsSupported {
+            row(
+                "Liquid Glass",
+                caption: """
+                How translucent the background should be. 100% disables the liquid \
+                glass effect and makes it fully opaque.
+                """
+            ) {
+                HStack(spacing: 10) {
+                    Slider(value: glassTintBinding, in: Settings.Limits.glassTint)
+                        .frame(width: 190)
+                    Text(settings.glassTint, format: .percent.precision(.fractionLength(0)))
+                        .monospacedDigit()
+                        .foregroundStyle(.secondary)
+                        .frame(width: 44, alignment: .trailing)
                 }
             }
         }
@@ -309,14 +316,14 @@ struct SettingsView: View {
     /// Spells out what the Shell field will actually start, because a typed
     /// command line runs through a shell rather than being exec'd itself.
     private var shellSummary: String {
-        if settings.shellLine.isEmpty {
+        guard !settings.shellLine.isEmpty else {
             return "Empty, so \(Settings.accountLoginShell) is used."
         }
         switch settings.shellLaunch {
-        case let .program(program):
-            return "Runs \(program) as a login shell. Applies to the next session."
+        case .program:
+            return "Restart for changes to take effect."
         case let .command(shell, _):
-            return "A command line, so \(shell) -c runs it. Applies to the next session."
+            return "A command line, so \(shell) -c runs it. Restart for changes to take effect."
         }
     }
 
@@ -413,6 +420,14 @@ struct SettingsView: View {
         )
     }
 
+    /// The selected identifier of one slot, as the theme sheet edits it.
+    private func themeIDBinding(_ slot: ThemeSlot) -> Binding<String> {
+        Binding(
+            get: { settings.themeID(for: slot) },
+            set: { settings.setThemeID($0, for: slot) }
+        )
+    }
+
     /// `launchAtLogin` is `private(set)`: the system's registration has to be
     /// updated through `Settings`, so the toggle writes through this binding.
     private var launchAtLoginBinding: Binding<Bool> {
@@ -439,5 +454,10 @@ struct SettingsView: View {
         if fontFamilies.isEmpty {
             fontFamilies = Settings.availableFontFamilies
         }
+    }
+
+    private var appIcon: NSImage {
+        NSApp.applicationIconImage
+            ?? NSWorkspace.shared.icon(forFile: Bundle.main.bundlePath)
     }
 }

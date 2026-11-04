@@ -75,7 +75,7 @@ final class AppWiringTests: XCTestCase {
 
             // Assigning a setting fires its callback, so a callback that is
             // still the placeholder above did not get replaced.
-            settings.themeID = settings.themeID
+            settings.darkThemeID = settings.darkThemeID
             XCTAssertFalse(appearanceFired, "the controller should be the one repainting on an appearance change")
 
             settings.shellPath = settings.shellPath
@@ -176,15 +176,23 @@ final class AppWiringTests: XCTestCase {
 
     /// What the terminal paints itself with comes from the selected identifier
     /// resolved through the real library, not from a copy of the catalog held
-    /// somewhere else. With nothing configured that has to be the guac theme, or
-    /// a first launch opens a terminal in colours nobody chose.
+    /// somewhere else. With nothing configured that has to be the guac theme in
+    /// dark mode and its daylight counterpart in light mode, or a first launch
+    /// opens a terminal in colours nobody chose.
     func testOutOfTheBoxTheSelectionIsTheGuacTheme() throws {
         let defaults = try TemporaryDefaults()
         withSettings(from: defaults) { settings in
-            XCTAssertEqual(settings.themeID, TerminalTheme.defaultThemeID)
+            XCTAssertEqual(settings.darkThemeID, TerminalTheme.defaultThemeID)
+            XCTAssertEqual(settings.lightThemeID, TerminalTheme.defaultLightThemeID)
+
+            settings.appearanceMode = .dark
             XCTAssertEqual(settings.theme.id, TerminalTheme.guac.id)
             XCTAssertEqual(settings.theme.name, TerminalTheme.guac.name)
             XCTAssertEqual(settings.theme.background, TerminalTheme.guac.background)
+            XCTAssertEqual(settings.theme.ansi.count, 16)
+
+            settings.appearanceMode = .light
+            XCTAssertEqual(settings.theme.id, TerminalTheme.guacLight.id)
             XCTAssertEqual(settings.theme.ansi.count, 16)
         }
     }

@@ -13,6 +13,7 @@
 		0A4CB6C21C22B1A28C317D7F /* Updater.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF2D938DC0E9B6FD47117699 /* Updater.swift */; };
 		17B0CA771273F1544ABDE3D1 /* KeyComboTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 437B6A13DDB8CB46046A8C2B /* KeyComboTests.swift */; };
 		27783A785FE53A6675A24982 /* TerminalThemeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 408FFC42EE3DE24CA60C0FAA /* TerminalThemeTests.swift */; };
+		29313A477DAA1B42B8601624 /* Appearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17C210EA6FAFB502016B0D52 /* Appearance.swift */; };
 		2C4BB46AB9BFD394B931D272 /* ThemePreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A802FA8BED2624DEDA5E0D5 /* ThemePreview.swift */; };
 		32EA2A543395E392D487EAB2 /* ThemeLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C4ADCC5DA0D0F280F232B05 /* ThemeLibrary.swift */; };
 		34E4C7D1F9CB9067F4F4B058 /* TestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EA377B386F557F9C0B99195 /* TestSupport.swift */; };
@@ -67,6 +68,7 @@
 
 /* Begin PBXFileReference section */
 		132300FDA111E39C4C84BFFB /* DropDownPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DropDownPanel.swift; sourceTree = "<group>"; };
+		17C210EA6FAFB502016B0D52 /* Appearance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Appearance.swift; sourceTree = "<group>"; };
 		1CE718116B8F828B9208837B /* ITermColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ITermColors.swift; sourceTree = "<group>"; };
 		26377213A47F72554A0B00A9 /* KeyCombo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyCombo.swift; sourceTree = "<group>"; };
 		2B540498513A8BCEFC05F48C /* Themes.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = Themes.json; sourceTree = "<group>"; };
@@ -150,6 +152,7 @@
 				9DA8D671D4322E0E17C78020 /* AboutView.swift */,
 				F543A499EF36791EB909613E /* AboutWindowController.swift */,
 				AB5E83154D8ED22CE2E895D6 /* AppDelegate.swift */,
+				17C210EA6FAFB502016B0D52 /* Appearance.swift */,
 				6A096EABF51FF852CDCED8B1 /* AppInfo.swift */,
 				132300FDA111E39C4C84BFFB /* DropDownPanel.swift */,
 				FA2086EE52D3E4A7E97D0BFD /* GlobalHotKey.swift */,
@@ -372,6 +375,7 @@
 				86D99D4195E6A235F392B0E3 /* AboutWindowController.swift in Sources */,
 				89485AB678080195520B86F0 /* AppDelegate.swift in Sources */,
 				E394F4EA71CC8B4B21DC30E6 /* AppInfo.swift in Sources */,
+				29313A477DAA1B42B8601624 /* Appearance.swift in Sources */,
 				73053CA5998E3CA0A123975F /* DropDownPanel.swift in Sources */,
 				3599EC1921236FE810EF7CF4 /* GlobalHotKey.swift in Sources */,
 				56981A6B6422FACAAD7687DD /* GuacTerminalView.swift in Sources */,

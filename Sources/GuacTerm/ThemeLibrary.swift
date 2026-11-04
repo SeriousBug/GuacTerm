@@ -157,13 +157,17 @@ final class ThemeLibrary: ObservableObject {
 
     // MARK: - Lookup
 
-    /// The theme with this identifier, or the default theme.
+    /// The theme with this identifier, or `fallback` when there is none.
     ///
     /// Falling back is what makes deleting the selected theme safe, and what
     /// keeps a `UserDefaults` value written before an import path moved from
-    /// turning into an empty terminal.
-    func theme(id: String) -> TerminalTheme {
-        all.first { $0.id == id } ?? bundled.first ?? TerminalTheme.guac
+    /// turning into an empty terminal. It is the caller's scheme — the light
+    /// selection falls back to a light theme, not to whatever ships first.
+    func theme(id: String, fallback: String = TerminalTheme.defaultThemeID) -> TerminalTheme {
+        all.first { $0.id == id }
+            ?? all.first { $0.id == fallback }
+            ?? bundled.first
+            ?? TerminalTheme.guac
     }
 
     /// The file behind an imported theme, or nil for a bundled one.

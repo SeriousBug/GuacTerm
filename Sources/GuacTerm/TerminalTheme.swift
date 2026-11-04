@@ -105,10 +105,13 @@ struct TerminalTheme: Identifiable, Hashable, Sendable, NamedTheme {
 
     // MARK: - Catalog access
 
-    /// The theme used when nothing is configured, and the fallback for an
+    /// The dark theme used when nothing is configured, and the fallback for an
     /// identifier written by an older version, or for an imported theme whose
     /// file has since been removed.
     static let defaultThemeID = "guac"
+
+    /// The light counterpart, used the same way while the appearance is light.
+    static let defaultLightThemeID = "guac-light"
 }
 
 extension NSColor {

@@ -134,7 +134,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func importThemes(from urls: [URL]) {
         let summary = themes.importThemes(from: urls)
         if let id = summary.firstImportedID {
-            settings.themeID = id
+            // The slot in effect: a scheme imported while the terminal is dark
+            // is the one the user wants to see there.
+            settings.setThemeID(id, for: settings.themeSlot)
         }
 
         guard !summary.failures.isEmpty else {
