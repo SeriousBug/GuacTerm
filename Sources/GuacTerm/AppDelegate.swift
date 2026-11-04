@@ -12,6 +12,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private var terminal: TerminalController!
     private var settingsWindowController: SettingsWindowController?
+    private var aboutWindowController: AboutWindowController?
     private var statusItem: NSStatusItem?
 
     /// Set when a theme was imported from a file opened with the app before
@@ -44,13 +45,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let launchedBefore = defaults.bool(forKey: "GuacTermHasLaunchedBefore")
         defaults.set(true, forKey: "GuacTermHasLaunchedBefore")
 
-        // Two launch flags: `--show` drops the terminal down (and is what a
-        // first run does anyway), `--settings` opens the pane instead, which is
-        // how you get to it without hunting for the menu bar item.
+        // Launch flags: `--show` drops the terminal down (and is what a first
+        // run does anyway), `--settings` opens the pane instead, and `--about`
+        // opens the license window. The windows are how you get to either
+        // without hunting for the menu bar item.
         if CommandLine.arguments.contains("--settings") {
             Task { @MainActor in
                 try? await Task.sleep(for: .milliseconds(350))
                 self.openSettings()
+            }
+        } else if CommandLine.arguments.contains("--about") {
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(350))
+                self.showAbout()
             }
         } else if !launchedBefore || CommandLine.arguments.contains("--show") {
             Task { @MainActor in
@@ -85,11 +92,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func showAbout() {
-        NSApp.orderFrontStandardAboutPanel(options: [
-            .applicationName: AppInfo.name,
-            .applicationVersion: AppInfo.version,
-            .version: AppInfo.build,
-        ])
+        if aboutWindowController == nil {
+            aboutWindowController = AboutWindowController()
+        }
+        aboutWindowController?.showWindow(nil)
     }
 
     @objc private func checkForUpdates() {
@@ -262,6 +268,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 item(titled: "Check for Updates…", action: #selector(checkForUpdates), keyEquivalent: "")
             )
         }
+        menu.addItem(item(titled: "About \(AppInfo.name)", action: #selector(showAbout), keyEquivalent: ""))
+        menu.addItem(.separator())
         menu.addItem(item(titled: "Quit \(AppInfo.name)", action: #selector(quit), keyEquivalent: "q"))
 
         statusItem.menu = menu

@@ -29,12 +29,14 @@
 		73053CA5998E3CA0A123975F /* DropDownPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 132300FDA111E39C4C84BFFB /* DropDownPanel.swift */; };
 		733F911B05DDE7A602CFB81B /* SwiftTerm in Frameworks */ = {isa = PBXBuildFile; productRef = FDD75102773CD3E970A8E85F /* SwiftTerm */; };
 		7BFDCC159F8D4BDBB1F6D82D /* SettingsRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 961231E6B190C1C832C449B4 /* SettingsRow.swift */; };
+		86D99D4195E6A235F392B0E3 /* AboutWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F543A499EF36791EB909613E /* AboutWindowController.swift */; };
 		88DAA5EF08642CB9E6908C5D /* ThemeCatalogTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 430B71C48407F5C993D285E7 /* ThemeCatalogTests.swift */; };
 		89485AB678080195520B86F0 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5E83154D8ED22CE2E895D6 /* AppDelegate.swift */; };
 		8DE16CCF44AEA9CA9B15B5D8 /* TabStopsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB051F15447F84C68F2A5635 /* TabStopsTests.swift */; };
 		97A660E8E5A01428C0665635 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 36F9E7078F8D2013E27B8454 /* Sparkle */; };
 		A08DBB8D57A091E857C2D311 /* ShortcutRecorderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BF80A1EF613EE05A1310304 /* ShortcutRecorderTests.swift */; };
 		A39FB7F0A8CE3FB8079A8048 /* Themes.json in Resources */ = {isa = PBXBuildFile; fileRef = 2B540498513A8BCEFC05F48C /* Themes.json */; };
+		A4FAFA9E69D8538D13A73DC2 /* AboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DA8D671D4322E0E17C78020 /* AboutView.swift */; };
 		A7A374E2A81458580D13411C /* ShellLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B371181E96BD5A2AE672B0D /* ShellLaunchTests.swift */; };
 		A8C5B2C4F6B9305C7B054FCA /* TerminalTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91CE064D6D1B55E439713770 /* TerminalTheme.swift */; };
 		AA22B492ADEE1725E6A6438A /* ITermColorsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A56C79F4654ECB9ABC51AE3B /* ITermColorsTests.swift */; };
@@ -42,7 +44,9 @@
 		B9389533CD74F2710A66F41F /* ThemeLibraryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B66255756F569C88E5C1508B /* ThemeLibraryTests.swift */; };
 		C098BAD27E8675E08BFEABF8 /* DropDownPanelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1098AE465CA8DB7F2E9FBBC /* DropDownPanelTests.swift */; };
 		D1BC1CFDC66C211005C05FD7 /* SwiftTerm in Frameworks */ = {isa = PBXBuildFile; productRef = 9C6A1743D2787B0A3C050955 /* SwiftTerm */; };
+		D2C8AF5968348690B1DEB628 /* AboutContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B81AC81601CCD3505482D07 /* AboutContent.swift */; };
 		E394F4EA71CC8B4B21DC30E6 /* AppInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A096EABF51FF852CDCED8B1 /* AppInfo.swift */; };
+		E7B361FBD01D7D5C71BADFB9 /* AboutContentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 677D31E8C413A0BCEEC56B80 /* AboutContentTests.swift */; };
 		EA70998C209E5C71A4399A92 /* SettingsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECE8FCE2E4F981FE9CD133A5 /* SettingsWindowController.swift */; };
 		EE58837DE7B1D11B680254BE /* SettingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D249ACFD73249CFFA25F3DF7 /* SettingsTests.swift */; };
 		EF23BCDDA29581A2F98A152C /* ThemePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99A4A0FCF3E76EA0E4FBA709 /* ThemePicker.swift */; };
@@ -69,6 +73,7 @@
 		35F15A4242AB6209288A50D1 /* GuacTerm.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GuacTerm.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3B371181E96BD5A2AE672B0D /* ShellLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellLaunchTests.swift; sourceTree = "<group>"; };
 		3B40F1C7C0FEE6007A017955 /* AppWiringTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppWiringTests.swift; sourceTree = "<group>"; };
+		3B81AC81601CCD3505482D07 /* AboutContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutContent.swift; sourceTree = "<group>"; };
 		3BFF5BD7CD25C9E2497C3C2B /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		406C4EC712562B5C4A91A24D /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		4084FDD3A9DCBD151BEB1ED2 /* ShellEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellEnvironment.swift; sourceTree = "<group>"; };
@@ -81,6 +86,7 @@
 		5EEC4A82A371ED60B51CAA6F /* ThemeCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeCatalog.swift; sourceTree = "<group>"; };
 		66EBE5BD5F4A31637E422657 /* Settings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings.swift; sourceTree = "<group>"; };
 		66EEBDE3C5CCE5BF16151329 /* Signing.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Signing.xcconfig; sourceTree = "<group>"; };
+		677D31E8C413A0BCEEC56B80 /* AboutContentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutContentTests.swift; sourceTree = "<group>"; };
 		6A096EABF51FF852CDCED8B1 /* AppInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppInfo.swift; sourceTree = "<group>"; };
 		6BF80A1EF613EE05A1310304 /* ShortcutRecorderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutRecorderTests.swift; sourceTree = "<group>"; };
 		8D7F74DFC64B72FD4D71CC54 /* ThemeCatalogLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeCatalogLoader.swift; sourceTree = "<group>"; };
@@ -88,6 +94,7 @@
 		961231E6B190C1C832C449B4 /* SettingsRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsRow.swift; sourceTree = "<group>"; };
 		99A4A0FCF3E76EA0E4FBA709 /* ThemePicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemePicker.swift; sourceTree = "<group>"; };
 		9C4ADCC5DA0D0F280F232B05 /* ThemeLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeLibrary.swift; sourceTree = "<group>"; };
+		9DA8D671D4322E0E17C78020 /* AboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutView.swift; sourceTree = "<group>"; };
 		9EA377B386F557F9C0B99195 /* TestSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestSupport.swift; sourceTree = "<group>"; };
 		A56C79F4654ECB9ABC51AE3B /* ITermColorsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ITermColorsTests.swift; sourceTree = "<group>"; };
 		AB5E83154D8ED22CE2E895D6 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -102,6 +109,7 @@
 		DF2D938DC0E9B6FD47117699 /* Updater.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Updater.swift; sourceTree = "<group>"; };
 		E5D07E1E11976E4646BAD272 /* TerminalController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalController.swift; sourceTree = "<group>"; };
 		ECE8FCE2E4F981FE9CD133A5 /* SettingsWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsWindowController.swift; sourceTree = "<group>"; };
+		F543A499EF36791EB909613E /* AboutWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutWindowController.swift; sourceTree = "<group>"; };
 		F9AF9AB0574E78B3683BD35A /* PanelGeometryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PanelGeometryTests.swift; sourceTree = "<group>"; };
 		FA2086EE52D3E4A7E97D0BFD /* GlobalHotKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalHotKey.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -138,6 +146,9 @@
 		6DF5E203EDB3E691CC537506 /* GuacTerm */ = {
 			isa = PBXGroup;
 			children = (
+				3B81AC81601CCD3505482D07 /* AboutContent.swift */,
+				9DA8D671D4322E0E17C78020 /* AboutView.swift */,
+				F543A499EF36791EB909613E /* AboutWindowController.swift */,
 				AB5E83154D8ED22CE2E895D6 /* AppDelegate.swift */,
 				6A096EABF51FF852CDCED8B1 /* AppInfo.swift */,
 				132300FDA111E39C4C84BFFB /* DropDownPanel.swift */,
@@ -169,6 +180,7 @@
 		86F23B4D62D7D2D2B0555B8E /* GuacTermTests */ = {
 			isa = PBXGroup;
 			children = (
+				677D31E8C413A0BCEEC56B80 /* AboutContentTests.swift */,
 				3B40F1C7C0FEE6007A017955 /* AppWiringTests.swift */,
 				D1098AE465CA8DB7F2E9FBBC /* DropDownPanelTests.swift */,
 				A56C79F4654ECB9ABC51AE3B /* ITermColorsTests.swift */,
@@ -333,6 +345,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E7B361FBD01D7D5C71BADFB9 /* AboutContentTests.swift in Sources */,
 				AB87A0709345525F4451CB65 /* AppWiringTests.swift in Sources */,
 				C098BAD27E8675E08BFEABF8 /* DropDownPanelTests.swift in Sources */,
 				AA22B492ADEE1725E6A6438A /* ITermColorsTests.swift in Sources */,
@@ -354,6 +367,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D2C8AF5968348690B1DEB628 /* AboutContent.swift in Sources */,
+				A4FAFA9E69D8538D13A73DC2 /* AboutView.swift in Sources */,
+				86D99D4195E6A235F392B0E3 /* AboutWindowController.swift in Sources */,
 				89485AB678080195520B86F0 /* AppDelegate.swift in Sources */,
 				E394F4EA71CC8B4B21DC30E6 /* AppInfo.swift in Sources */,
 				73053CA5998E3CA0A123975F /* DropDownPanel.swift in Sources */,

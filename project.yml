@@ -102,7 +102,7 @@ targets:
         LSMinimumSystemVersion: $(MACOSX_DEPLOYMENT_TARGET)
         LSUIElement: true
         NSHighResolutionCapable: true
-        NSHumanReadableCopyright: Copyright © 2025 GuacTerm. All rights reserved.
+        NSHumanReadableCopyright: Copyright © 2026 Kaan C. Barmore-Genc. All rights reserved.
         NSPrincipalClass: NSApplication
         # Sparkle. The feed is the appcast.xml asset of the newest GitHub
         # release, so a check always reads the newest published version and the
