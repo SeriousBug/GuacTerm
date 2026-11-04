@@ -74,7 +74,12 @@ struct TerminalTheme: Identifiable, Hashable, Sendable, NamedTheme {
         if digits.first == "#" {
             digits = digits.dropFirst()
         }
-        guard digits.count == 6, let value = UInt32(digits, radix: 16) else { return nil }
+        // `UInt32(_:radix:)` takes a leading sign, and six digits plus a sign
+        // would otherwise pass as six hex digits and then draw as black.
+        guard digits.count == 6,
+              digits.allSatisfy(\.isHexDigit),
+              let value = UInt32(digits, radix: 16)
+        else { return nil }
         return RGB(
             red: Int((value >> 16) & 0xFF),
             green: Int((value >> 8) & 0xFF),

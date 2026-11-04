@@ -94,7 +94,19 @@ struct KeyCombo: Hashable, Codable, Sendable {
 
     init(from decoder: Decoder) throws {
         var container = try decoder.unkeyedContainer()
-        keyCode = try UInt16(container.decode(UInt32.self))
+
+        // A stored key code outside `UInt16` has to be refused, not truncated:
+        // the initialiser would trap, and this runs while the app is reading
+        // its defaults at launch, where a trap is a crash on every start.
+        let storedKeyCode = try container.decode(UInt32.self)
+        guard let keyCode = UInt16(exactly: storedKeyCode) else {
+            throw DecodingError.dataCorruptedError(
+                in: container,
+                debugDescription: "\(storedKeyCode) is not a virtual key code"
+            )
+        }
+        self.keyCode = keyCode
+
         carbonModifiers = try container.decode(UInt32.self) & Self.relevantModifiers
     }
 
@@ -138,6 +150,10 @@ enum KeyName {
             (UInt16(kVK_F16), 16), (UInt16(kVK_F17), 17), (UInt16(kVK_F18), 18),
             (UInt16(kVK_F19), 19), (UInt16(kVK_F20), 20),
         ]
+
+        for (code, number) in functionKeys {
+            map[code] = "F\(number)"
+        }
 
         return map
     }()
