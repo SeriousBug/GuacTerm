@@ -253,7 +253,9 @@ struct SettingsView: View {
     /// A typed program beats a file picker: `zsh` or `zellij` is faster to type
     /// than finding `/opt/homebrew/bin/zellij` in a panel full of dotfiles, and
     /// a bare name is looked up in `PATH` by ``Settings/resolveExecutable(_:)``.
-    /// The menu next to the field lists only programs that are installed.
+    /// The field also takes a whole command line — `zellij attach || zellij` —
+    /// which ``Settings/shellLaunch`` hands to a shell. The menu next to the
+    /// field lists only programs that are installed.
     private var shellRow: some View {
         VStack(alignment: .leading, spacing: 5) {
             HStack(spacing: 12) {
@@ -265,7 +267,7 @@ struct SettingsView: View {
                     .textFieldStyle(.roundedBorder)
                     .font(.body.monospaced())
                     .frame(width: 230)
-                    .help("A name like zsh, tmux or zellij, or a full path.")
+                    .help("A program like zsh or zellij, or a command line like zellij attach || zellij.")
 
                 Menu {
                     ForEach(shellPaths, id: \.self) { path in
@@ -289,22 +291,37 @@ struct SettingsView: View {
                 .help("Installed shells and multiplexers")
             }
 
-            if settings.shellPathIsValid {
-                captionText("Runs as a login shell. Applies to the next session.")
-            } else if settings.shellPath.isEmpty {
-                captionText("Empty, so \(Settings.accountLoginShell) is used.")
+            if let warning = shellWarning {
+                Label(warning, systemImage: "exclamationmark.triangle.fill")
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+                    .fixedSize(horizontal: false, vertical: true)
             } else {
-                Label(
-                    "Not an executable, so \(Settings.accountLoginShell) is used instead.",
-                    systemImage: "exclamationmark.triangle.fill"
-                )
-                .font(.caption)
-                .foregroundStyle(.orange)
-                .fixedSize(horizontal: false, vertical: true)
+                captionText(shellSummary)
             }
         }
         .padding(.vertical, 11)
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// Spells out what the Shell field will actually start, because a typed
+    /// command line runs through a shell rather than being exec'd itself.
+    private var shellSummary: String {
+        if settings.shellLine.isEmpty {
+            return "Empty, so \(Settings.accountLoginShell) is used."
+        }
+        switch settings.shellLaunch {
+        case .program(let program):
+            return "Runs \(program) as a login shell. Applies to the next session."
+        case .command(let shell, _):
+            return "A command line, so \(shell) -c runs it. Applies to the next session."
+        }
+    }
+
+    private var shellWarning: String? {
+        guard settings.shellIsUninstalledProgram else { return nil }
+        let name = settings.shellLine
+        return "\(name) is not an installed program. \(Settings.accountLoginShell) still runs it with -c, so it has to be something your startup files define."
     }
 
     private func captionText(_ text: String) -> some View {

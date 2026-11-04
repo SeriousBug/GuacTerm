@@ -237,6 +237,9 @@ final class TerminalController: NSObject {
     }
 
     func shutdown() {
+        // Quitting is not the shell exiting: drop the delegate first so the end
+        // of the session does not try to slide the panel away on the way out.
+        terminalView?.processDelegate = nil
         terminalView?.terminate()
     }
 
@@ -386,19 +389,34 @@ final class TerminalController: NSObject {
 
     private func startShell() {
         guard let terminalView else { return }
-        let shell = settings.resolvedShellPath
-        // A leading dash makes the shell a login shell, so it reads the same
-        // startup files it would in Terminal.app.
-        let loginName = "-" + (shell as NSString).lastPathComponent
+        let launch = settings.shellLaunch
 
-        terminalView.startProcess(
-            executable: shell,
-            args: [],
-            environment: ShellEnvironment.make(shell: shell),
-            execName: loginName,
-            currentDirectory: NSHomeDirectory()
-        )
+        switch launch {
+        case .program(let program):
+            terminalView.startProcess(
+                executable: program,
+                args: [],
+                environment: ShellEnvironment.make(shell: program),
+                execName: Self.loginName(for: program),
+                currentDirectory: NSHomeDirectory()
+            )
+
+        case .command(let shell, let line):
+            // Only a shell can interpret a command line, so the account's own
+            // login shell parses it and then `exec`s what it found.
+            terminalView.startProcess(
+                executable: shell,
+                args: ["-c", line],
+                environment: ShellEnvironment.make(shell: shell),
+                execName: Self.loginName(for: shell),
+                currentDirectory: NSHomeDirectory()
+            )
+        }
         sessionAlive = true
+    }
+
+    private static func loginName(for program: String) -> String {
+        "-" + (program as NSString).lastPathComponent
     }
 
     // MARK: - Appearance
@@ -507,8 +525,21 @@ extension TerminalController: LocalProcessTerminalViewDelegate {
     }
 
     func processTerminated(source: TerminalView, exitCode: Int32?) {
-        // The shell exited (or `exit` was typed). A fresh one starts the next
-        // time the panel drops down.
+        // `exit` was typed, or the program the panel ran — a multiplexer, say —
+        // finished. Either way there is nothing left to look at, so the panel
+        // drops away exactly as if the shortcut had been pressed, and the next
+        // show starts a fresh session.
+        guard let view = source as? GuacTerminalView, view === terminalView else { return }
         sessionAlive = false
+        hide()
+    }
+
+    func processFailedToStart(source: TerminalView, error: LocalProcessError) {
+        // The exec itself failed — a mistyped path, or a program that has been
+        // uninstalled. Nothing is running, so the panel has nothing to show.
+        guard let view = source as? GuacTerminalView, view === terminalView else { return }
+        NSLog("[GuacTerm] could not start the session: \(error)")
+        sessionAlive = false
+        hide()
     }
 }

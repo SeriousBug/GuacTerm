@@ -30,6 +30,22 @@ enum AppearanceMode: String, CaseIterable, Identifiable, Sendable {
     }
 }
 
+/// What a new session runs, worked out from the Shell setting.
+///
+/// The setting takes either a program or a whole command line, because the two
+/// are useful in different situations and telling them apart is easy: a single
+/// program can be launched directly, while `zellij attach || zellij` only means
+/// something to a shell.
+enum ShellLaunch: Equatable, Sendable {
+    /// A program to exec, e.g. `/bin/zsh` or `/opt/homebrew/bin/zellij`. It is
+    /// named as a login shell, so it reads the startup files Terminal.app would.
+    case program(String)
+
+    /// A command line handed to the account's login shell with `-c`, e.g.
+    /// `zellij attach || zellij`.
+    case command(shell: String, line: String)
+}
+
 /// Everything the user can change, persisted in `UserDefaults`.
 ///
 /// This is deliberately the *entire* configuration surface of the app. GuacTerm
@@ -68,7 +84,8 @@ final class Settings: ObservableObject {
         }
     }
 
-    /// Absolute path of the shell to launch, e.g. `/bin/zsh`.
+    /// Absolute path of the shell or command to launch, e.g. `/bin/zsh`,
+    /// `zellij`, or `zellij attach || zellij`. See ``shellLaunch``.
     @Published var shellPath: String {
         didSet {
             persist()
@@ -199,16 +216,43 @@ final class Settings: ObservableObject {
         return NSFont.monospacedSystemFont(ofSize: fontSize, weight: .regular)
     }
 
-    /// Shell used for new sessions, falling back to the account's login shell
-    /// if the configured one has been uninstalled or mistyped.
-    var resolvedShellPath: String {
-        Self.resolveExecutable(shellPath) ?? Self.accountLoginShell
+    /// The Shell field without the spaces typing leaves around it.
+    var shellLine: String {
+        shellPath.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    /// Whether what is typed in Settings actually points at a program, so the
-    /// pane can say so instead of silently running something else.
-    var shellPathIsValid: Bool {
-        Self.resolveExecutable(shellPath) != nil
+    /// What a new session runs, from whatever is typed in Settings.
+    ///
+    /// Typing is the way to pick a shell here: `zsh` or `zellij` is faster than
+    /// hunting for `/opt/homebrew/bin/zellij` in a file panel. When what is
+    /// typed *is* a program — a bare name found in `PATH`, or a path — it is
+    /// launched directly and named as a login shell.
+    ///
+    /// Anything else is a command line, and there is no way to exec that: `||`,
+    /// spaces between arguments and quoting all have to be interpreted. Those
+    /// run through the account's login shell with `-c`, so `zellij attach ||
+    /// zellij` works and still reads the same startup files it would in
+    /// Terminal.app.
+    var shellLaunch: ShellLaunch {
+        let line = shellLine
+        guard !line.isEmpty else { return .program(Self.accountLoginShell) }
+        if let program = Self.resolveExecutable(line) {
+            return .program(program)
+        }
+        return .command(shell: Self.accountLoginShell, line: line)
+    }
+
+    /// True when the Shell field holds one bare word that is not an installed
+    /// program.
+    ///
+    /// That is usually a typo — `zshi` instead of `zsh` — and the panel would
+    /// open and close again before anything could be read, so the pane says so.
+    /// It is only a note: a shell function or alias the user's own startup
+    /// files define works fine through `-c`.
+    var shellIsUninstalledProgram: Bool {
+        guard case .command(_, let line) = shellLaunch else { return false }
+        guard line.split(whereSeparator: \.isWhitespace).count == 1 else { return false }
+        return !line.contains { #"|&;<>()$`\"'"#.contains($0) }
     }
 
     // MARK: - Loading and saving
