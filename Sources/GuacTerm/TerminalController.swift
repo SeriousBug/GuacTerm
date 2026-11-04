@@ -461,15 +461,15 @@ final class TerminalController: NSObject {
         terminalView.caretColor = theme.nsCursor
         terminalView.installColors(theme.terminalPalette)
 
-        // Over glass the theme is painted at partial opacity so the material
-        // (and the desktop behind it) shows through. SwiftTerm keeps its backing
-        // layer clear in that case, and `translucentCellBackgrounds` stops ANSI
-        // backgrounds from punching opaque holes in the glass.
-        terminalView.translucentCellBackgrounds = glass
+        // Over glass the default background is painted at partial opacity so
+        // the material (and the desktop behind it) shows through, while
+        // everything with a color of its own stays opaque — the way Terminal.app
+        // and iTerm2 do it. Colored blocks therefore cannot be tinted by what
+        // is behind them: a powerline separator draws its half of the boundary
+        // in the theme color, and a cell background that was see-through would
+        // leave a visible seam where the two meet.
+        terminalView.translucentCellBackgrounds = false
         terminalView.backgroundOpacity = glass ? settings.glassTint : 1
-        terminalView.layer?.backgroundColor = glass
-            ? NSColor.clear.cgColor
-            : theme.nsBackground.cgColor
     }
 
     /// Puts the terminal's host view inside `parent`, filling it.
