@@ -94,7 +94,10 @@ final class Settings: ObservableObject {
 
     /// Height of the drop-down window, as a fraction of the screen's height.
     @Published var heightFraction: Double {
-        didSet { persist() }
+        didSet {
+            persist()
+            onWindowGeometryChange?()
+        }
     }
 
     /// Font family used for the terminal, e.g. `Menlo`.
@@ -170,6 +173,9 @@ final class Settings: ObservableObject {
     /// Called when a setting changes that needs a brand new shell process.
     var onSessionSettingsChange: (() -> Void)?
 
+    /// Called when the panel's size changes, so an open panel can follow along.
+    var onWindowGeometryChange: (() -> Void)?
+
     /// Called when the window appearance changes.
     var onAppearanceModeChange: ((AppearanceMode) -> Void)?
 
@@ -194,13 +200,15 @@ final class Settings: ObservableObject {
     }
 
     /// Shell used for new sessions, falling back to the account's login shell
-    /// if the configured one has been uninstalled.
+    /// if the configured one has been uninstalled or mistyped.
     var resolvedShellPath: String {
-        let path = shellPath
-        if !path.isEmpty, FileManager.default.isExecutableFile(atPath: path) {
-            return path
-        }
-        return Self.accountLoginShell
+        Self.resolveExecutable(shellPath) ?? Self.accountLoginShell
+    }
+
+    /// Whether what is typed in Settings actually points at a program, so the
+    /// pane can say so instead of silently running something else.
+    var shellPathIsValid: Bool {
+        Self.resolveExecutable(shellPath) != nil
     }
 
     // MARK: - Loading and saving
@@ -306,21 +314,84 @@ final class Settings: ObservableObject {
         return "/bin/zsh"
     }
 
-    /// Shells listed in `/etc/shells`, which is the set macOS considers valid
-    /// login shells.
-    static var availableShells: [String] {
-        let loginShell = accountLoginShell
-        guard let contents = try? String(contentsOfFile: "/etc/shells", encoding: .utf8) else {
-            return [loginShell]
+    /// Turns whatever the user typed into an absolute path to a program, or
+    /// `nil` if it is not one.
+    ///
+    /// Typing is the way to pick a shell here: `zsh` or `zellij` is faster than
+    /// hunting for `/opt/homebrew/bin/zellij` in a file panel, and multiplexers
+    /// are exactly the kind of thing GuacTerm expects people to run. A bare name
+    /// is looked up in `PATH` and in the usual install locations, because an app
+    /// launched from Finder inherits a very short `PATH`.
+    static func resolveExecutable(_ raw: String) -> String? {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+
+        let expanded = (trimmed as NSString).expandingTildeInPath
+        if expanded.contains("/") {
+            return isExecutableFile(expanded) ? expanded : nil
         }
-        let shells = contents
-            .split(separator: "\n")
-            .map { $0.trimmingCharacters(in: .whitespaces) }
-            .filter { !$0.isEmpty && !$0.hasPrefix("#") }
-            .filter { FileManager.default.isExecutableFile(atPath: $0) }
+
+        for directory in executableSearchDirectories {
+            let candidate = (directory as NSString).appendingPathComponent(expanded)
+            if isExecutableFile(candidate) {
+                return candidate
+            }
+        }
+        return nil
+    }
+
+    /// `isExecutableFile` alone is true for directories, which is not something
+    /// that can be launched.
+    private static func isExecutableFile(_ path: String) -> Bool {
+        var isDirectory: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory),
+              !isDirectory.boolValue
+        else { return false }
+        return FileManager.default.isExecutableFile(atPath: path)
+    }
+
+    /// Where a bare command name is searched for: the app's own `PATH` first,
+    /// then Homebrew, MacPorts and the system directories.
+    private static var executableSearchDirectories: [String] {
+        var directories: [String] = []
+        if let path = ProcessInfo.processInfo.environment["PATH"] {
+            directories += path.split(separator: ":").map(String.init)
+        }
+        directories += [
+            "/opt/homebrew/bin",
+            "/opt/homebrew/sbin",
+            "/usr/local/bin",
+            "/usr/bin",
+            "/bin",
+        ]
+
         var seen = Set<String>()
-        let unique = shells.filter { seen.insert($0).inserted }
-        return unique.contains(loginShell) ? unique : [loginShell] + unique
+        return directories.filter { !$0.isEmpty && seen.insert($0).inserted }
+    }
+
+    /// Programs offered in the Shell menu: every login shell macOS knows about,
+    /// plus the shells and multiplexers GuacTerm expects people to run inside it
+    /// (the modern shells are rarely listed in `/etc/shells`).
+    ///
+    /// Anything that is not actually installed is dropped, so the menu never
+    /// offers a path that would fail to launch.
+    static var availableShells: [String] {
+        var candidates: [String] = [accountLoginShell]
+
+        if let contents = try? String(contentsOfFile: "/etc/shells", encoding: .utf8) {
+            candidates += contents
+                .split(separator: "\n")
+                .map { $0.trimmingCharacters(in: .whitespaces) }
+                .filter { !$0.isEmpty && !$0.hasPrefix("#") }
+        }
+
+        // Resolved against `PATH`, so this covers Homebrew on Apple silicon
+        // (`/opt/homebrew/bin`) as well as Intel and manual installs. A name that
+        // is not installed, like `termux`, never appears.
+        candidates += ["fish", "nu", "tmux", "zellij", "termux"].compactMap(resolveExecutable)
+
+        var seen = Set<String>()
+        return candidates.compactMap(resolveExecutable).filter { seen.insert($0).inserted }
     }
 
     static var defaultFontName: String {

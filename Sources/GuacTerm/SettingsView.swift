@@ -80,9 +80,7 @@ struct SettingsView: View {
             shortcutRow
             Divider()
 
-            row("Shell", caption: settings.shellPath) {
-                shellControls
-            }
+            shellRow
             Divider()
 
             row("Scrollback", caption: "Applies to the next session.") {
@@ -123,7 +121,7 @@ struct SettingsView: View {
 
             row(
                 "Hide When Focus Is Lost",
-                caption: "Drop the terminal away when you switch to another app."
+                caption: "Drop the terminal away when you switch to another app. While Settings is open it stays put, so changes can be previewed."
             ) {
                 Toggle("Hide When Focus Is Lost", isOn: $settings.hideOnFocusLoss)
                     .labelsHidden()
@@ -252,27 +250,68 @@ struct SettingsView: View {
 
     // MARK: - Controls
 
-    private var shellControls: some View {
-        HStack(spacing: 8) {
-            Menu {
-                ForEach(shellOptions, id: \.self) { path in
-                    Button {
-                        settings.shellPath = path
-                    } label: {
-                        if path == settings.shellPath {
-                            Label(path, systemImage: "checkmark")
-                        } else {
-                            Text(path)
+    /// A typed program beats a file picker: `zsh` or `zellij` is faster to type
+    /// than finding `/opt/homebrew/bin/zellij` in a panel full of dotfiles, and
+    /// a bare name is looked up in `PATH` by ``Settings/resolveExecutable(_:)``.
+    /// The menu next to the field lists only programs that are installed.
+    private var shellRow: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            HStack(spacing: 12) {
+                Text("Shell")
+                    .fixedSize()
+                Spacer(minLength: 12)
+
+                TextField("/bin/zsh", text: $settings.shellPath)
+                    .textFieldStyle(.roundedBorder)
+                    .font(.body.monospaced())
+                    .frame(width: 230)
+                    .help("A name like zsh, tmux or zellij, or a full path.")
+
+                Menu {
+                    ForEach(shellPaths, id: \.self) { path in
+                        Button {
+                            settings.shellPath = path
+                        } label: {
+                            if path == settings.shellPath {
+                                Label(path, systemImage: "checkmark")
+                            } else {
+                                Text(path)
+                            }
                         }
                     }
+                } label: {
+                    Image(systemName: "chevron.up.chevron.down")
+                        .font(.caption2)
                 }
-            } label: {
-                Text(shellName)
+                .menuStyle(.borderlessButton)
+                .menuIndicator(.hidden)
+                .fixedSize()
+                .help("Installed shells and multiplexers")
             }
-            .fixedSize()
 
-            Button("Choose…", action: chooseShell)
+            if settings.shellPathIsValid {
+                captionText("Runs as a login shell. Applies to the next session.")
+            } else if settings.shellPath.isEmpty {
+                captionText("Empty, so \(Settings.accountLoginShell) is used.")
+            } else {
+                Label(
+                    "Not an executable, so \(Settings.accountLoginShell) is used instead.",
+                    systemImage: "exclamationmark.triangle.fill"
+                )
+                .font(.caption)
+                .foregroundStyle(.orange)
+                .fixedSize(horizontal: false, vertical: true)
+            }
         }
+        .padding(.vertical, 11)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func captionText(_ text: String) -> some View {
+        Text(text)
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
     }
 
     private var scrollbackControls: some View {
@@ -375,21 +414,6 @@ struct SettingsView: View {
 
     // MARK: - Lists
 
-    /// `shellPath` may point outside `/etc/shells` (an old value, or a file
-    /// picked with "Choose…"), so the current one is always an option.
-    private var shellOptions: [String] {
-        var paths = shellPaths
-        if !paths.contains(settings.shellPath) {
-            paths.insert(settings.shellPath, at: 0)
-        }
-        return paths
-    }
-
-    private var shellName: String {
-        let name = (settings.shellPath as NSString).lastPathComponent
-        return name.isEmpty ? "Shell" : name
-    }
-
     private var fontOptions: [String] {
         var families = fontFamilies
         if !families.contains(settings.fontName) {
@@ -405,52 +429,6 @@ struct SettingsView: View {
         if fontFamilies.isEmpty {
             fontFamilies = Settings.availableFontFamilies
         }
-    }
-
-    // MARK: - Actions
-
-    private func chooseShell() {
-        let panel = NSOpenPanel()
-        panel.title = "Choose a Shell"
-        panel.message = "Pick the program GuacTerm runs for new sessions."
-        panel.prompt = "Choose"
-        panel.canChooseFiles = true
-        panel.canChooseDirectories = false
-        panel.allowsMultipleSelection = false
-        panel.resolvesAliases = true
-        panel.treatsFilePackagesAsDirectories = false
-        panel.showsHiddenFiles = true
-
-        let directory = (settings.shellPath as NSString).deletingLastPathComponent
-        panel.directoryURL = URL(fileURLWithPath: directory.isEmpty ? "/bin" : directory)
-
-        // The delegate is only weakly held by the panel, so keep it alive for
-        // the duration of the modal session.
-        let filter = ExecutableFileFilter()
-        panel.delegate = filter
-        let response = withExtendedLifetime(filter) { panel.runModal() }
-
-        guard response == .OK, let url = panel.url else { return }
-        if FileManager.default.isExecutableFile(atPath: url.path) {
-            settings.shellPath = url.path
-        } else {
-            NSSound.beep()
-        }
-    }
-}
-
-// MARK: - Shell picker filter
-
-/// Lets the open panel walk into folders but only enables files that can be
-/// executed, which is the only kind of file that makes sense as a shell.
-@MainActor
-private final class ExecutableFileFilter: NSObject, NSOpenSavePanelDelegate {
-
-    func panel(_ sender: Any, shouldEnable url: URL) -> Bool {
-        var isDirectory: ObjCBool = false
-        let exists = FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory)
-        if exists, isDirectory.boolValue { return true }
-        return FileManager.default.isExecutableFile(atPath: url.path)
     }
 }
 

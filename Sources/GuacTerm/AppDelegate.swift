@@ -82,14 +82,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func openSettings() {
-        terminal.hide(animated: false)
-
         if settingsWindowController == nil {
-            settingsWindowController = SettingsWindowController(
+            let controller = SettingsWindowController(
                 settings: settings,
                 showsThemePickerOnAppear: CommandLine.arguments.contains("--theme-picker")
             )
+            controller.onClose = { [weak self] in
+                self?.terminal.setSettingsPreviewing(false)
+            }
+            settingsWindowController = controller
         }
+
+        // The pane is also the preview: the terminal stays (or comes) up, and
+        // is dropped below the settings window before that window is ordered
+        // in front of it.
+        terminal.setSettingsPreviewing(true)
+        settingsWindowController?.place(clearOf: terminal.frameOnScreen)
+
         NSApp.activate()
         settingsWindowController?.showWindow(nil)
     }

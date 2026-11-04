@@ -44,7 +44,22 @@ final class TerminalController: NSObject {
     private var shownAt: Date?
     private var previousApplication: NSRunningApplication?
 
+    /// True while the settings window is open. The pane is also the live
+    /// preview, so the panel stays on screen while it is up: it ignores "Hide
+    /// When Focus Is Lost" and drops below the settings window instead of
+    /// hanging above it.
+    private var isSettingsPreviewing = false
+
     var isShown: Bool { visible }
+
+    /// The panel's frame on screen while it is resting there, or `nil` while it
+    /// is away. The settings window uses it to stay out of the terminal's way,
+    /// so it reports the frame the panel is heading for rather than wherever a
+    /// running slide happens to be.
+    var frameOnScreen: NSRect? {
+        guard visible, let screen = targetScreen() else { return nil }
+        return frame(for: screen)
+    }
 
     init(settings: Settings) {
         self.settings = settings
@@ -87,6 +102,9 @@ final class TerminalController: NSObject {
         settings.onSessionSettingsChange = { [weak self] in
             // Never kill a shell the user is working in; take effect next time.
             self?.needsFreshSession = true
+        }
+        settings.onWindowGeometryChange = { [weak self] in
+            self?.applyWindowHeight()
         }
         NotificationCenter.default.addObserver(
             self,
@@ -187,11 +205,35 @@ final class TerminalController: NSObject {
     }
 
     /// Called when another app becomes active. Only hides when the user asked
-    /// for that behaviour in Settings.
+    /// for that behaviour in Settings, and never while the settings window is
+    /// open: dropping the terminal away mid-change would make the preview
+    /// impossible to look at.
     func handleApplicationDeactivated() {
-        guard settings.hideOnFocusLoss, visible else { return }
+        guard settings.hideOnFocusLoss, visible, !isSettingsPreviewing else { return }
         if let shownAt, Date().timeIntervalSince(shownAt) < Timing.deactivationGrace { return }
         hide()
+    }
+
+    // MARK: - Settings preview
+
+    /// Keeps the terminal on screen while the settings window is up.
+    ///
+    /// Everything the pane changes already applies live through
+    /// ``Settings/onAppearanceChange``; this is what leaves a terminal there to
+    /// look at. The panel normally floats at `.statusBar` so it stays above
+    /// other windows, but then it would cover the settings window itself, so
+    /// while previewing it drops to `.normal` and the settings window is
+    /// ordered in front of it.
+    func setSettingsPreviewing(_ previewing: Bool) {
+        guard previewing != isSettingsPreviewing else { return }
+        isSettingsPreviewing = previewing
+        panel.level = previewing ? .normal : .statusBar
+
+        if previewing {
+            // Show it if it was not already: there is nothing to preview
+            // otherwise. A visible panel is only refocused, not re-animated.
+            show()
+        }
     }
 
     func shutdown() {
@@ -240,11 +282,7 @@ final class TerminalController: NSObject {
     // MARK: - Geometry
 
     private func targetScreen() -> NSScreen? {
-        let mouse = NSEvent.mouseLocation
-        if let screen = NSScreen.screens.first(where: { NSMouseInRect(mouse, $0.frame, false) }) {
-            return screen
-        }
-        return NSScreen.main ?? NSScreen.screens.first
+        NSScreen.underMouse
     }
 
     private func frame(for screen: NSScreen) -> NSRect {
@@ -264,6 +302,15 @@ final class TerminalController: NSObject {
     @objc private func screenParametersChanged() {
         guard visible, let screen = targetScreen() else { return }
         animationGeneration += 1
+        panel.setFrame(frame(for: screen), display: true)
+    }
+
+    /// Follows the height slider while the settings window is open, so the
+    /// window size is previewed too instead of only applying next time. SwiftTerm
+    /// reflows the shell on each step, which is what a live resize does in any
+    /// other terminal.
+    private func applyWindowHeight() {
+        guard visible, let screen = targetScreen() else { return }
         panel.setFrame(frame(for: screen), display: true)
     }
 

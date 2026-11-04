@@ -91,19 +91,22 @@ another app was frontmost — the first click is not spent on focusing the windo
 ### Settings
 
 Everything lives in one window (menu bar › Settings); there is no Apply button.
+The terminal stays on screen behind it, so every change can be seen as you make
+it — even with "Hide When Focus Is Lost" on, which is ignored while Settings is
+open.
 
 | Setting | What it does |
 | --- | --- |
 | Toggle Shortcut | Records any combination with at least one modifier, or a bare function key. Conflicting shortcuts are reported instead of silently ignored. |
-| Shell | Any entry from `/etc/shells`, or any executable you pick. It runs as a login shell, so it reads the same startup files Terminal.app would. |
+| Shell | Type a program and press return; a bare name (`zsh`, `fish`, `zellij`) is looked up in `PATH`, or give a full path. The menu lists the installed shells and multiplexers, and nothing that is not there. It runs as a login shell, so it reads the same startup files Terminal.app would. |
 | Scrollback | Lines of history to keep. Applies to the next session. |
-| Window Height | How much of the screen the panel takes, 15–100%. |
+| Window Height | How much of the screen the panel takes, 15–100%. The panel follows the slider. |
 | Font | Any installed fixed-pitch family, 8–48 pt. |
 | Appearance | System, Light or Dark. This is the app's chrome only; the terminal follows the theme. |
 | Theme | A searchable list of every scheme, applied live as you browse. Cancel puts the old one back. |
 | Liquid Glass | Paints the theme over macOS's native glass material instead of a solid background (macOS 26+). Hidden on older systems. |
 | Glass Tint | How much theme color sits on the glass: 100% is nearly solid, 20% lets the desktop through almost untouched. |
-| Hide When Focus Is Lost | Drop the panel away when you switch to another app. |
+| Hide When Focus Is Lost | Drop the panel away when you switch to another app. Settings is exempt so the preview stays visible. |
 | Launch at Login | Registers the app with `SMAppService`. Needs a signed bundle to take effect. |
 
 Settings are stored in `UserDefaults` under `com.guacterm.GuacTerm`, so they can
@@ -113,6 +116,7 @@ be scripted or reset:
 defaults read com.guacterm.GuacTerm
 defaults delete com.guacterm.GuacTerm          # back to defaults
 defaults write com.guacterm.GuacTerm themeID -string nord
+defaults write com.guacterm.GuacTerm shellPath -string zellij
 defaults write com.guacterm.GuacTerm scrollbackLines -int 50000
 defaults write com.guacterm.GuacTerm glassBackground -bool YES
 defaults write com.guacterm.GuacTerm glassTint -float 0.55
