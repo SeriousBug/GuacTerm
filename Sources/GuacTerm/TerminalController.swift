@@ -374,6 +374,7 @@ final class TerminalController: NSObject {
         terminalView = view
 
         needsFreshSession = false
+        view.repairTabStopsIfNeeded()
         applyAppearance()
         startShell()
     }

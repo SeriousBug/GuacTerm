@@ -56,6 +56,45 @@ final class GuacTerminalView: LocalProcessTerminalView {
         }
     }
 
+    /// The narrowest grid that still needs ``repairTabStopsIfNeeded()``: the
+    /// 80-column default's last tab stop is column 72, and a grid that narrow
+    /// ends before the gap past it.
+    static let narrowestGridNeedingTabRepair = 74
+
+    /// Gives the grid the tab stops of its own width.
+    ///
+    /// SwiftTerm builds its buffers for its 80-column default before the view's
+    /// size reaches them, and growing a buffer adds empty slots to the tab-stop
+    /// table without filling them in. Only a resize re-runs the tab-stop setup,
+    /// so the grid otherwise keeps the stops of an 80-column terminal (columns
+    /// 0 to 72) and a TAB past column 72 goes to the *last column of the row*
+    /// instead of to the next stop. `ls` pads its columns with tabs, so each
+    /// padded run jumped to the right edge and the rest of the word wrapped onto
+    /// the next line.
+    ///
+    /// Narrowing the view and restoring it is the cheapest way to ask for that
+    /// setup. Run it before the shell starts: the screen is empty and there is
+    /// no PTY yet, so the two reflows cost nothing and nothing the shell prints
+    /// can be disturbed. The grid ends up the size it started.
+    func repairTabStopsIfNeeded() {
+        let size = frame.size
+        guard let intermediate = Self.tabStopRepairSize(for: size, cols: terminalDimensions.cols) else {
+            return
+        }
+        setFrameSize(intermediate)
+        setFrameSize(size)
+    }
+
+    /// The size to narrow a `size` view to before restoring it, or `nil` when
+    /// its grid does not need repairing. Split out from the resize itself so the
+    /// decision can be tested without a view.
+    static func tabStopRepairSize(for size: NSSize, cols: Int) -> NSSize? {
+        guard cols >= narrowestGridNeedingTabRepair, size.width > 1, size.height > 1 else {
+            return nil
+        }
+        return NSSize(width: size.width / 2, height: size.height)
+    }
+
     /// Nil targets send the action down the responder chain, which lands on
     /// this view's `copy(_:)`, `paste(_:)` and `selectAll(_:)`.
     private func installContextMenu() {

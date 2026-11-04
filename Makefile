@@ -3,6 +3,7 @@
 #   make project      regenerate GuacTerm.xcodeproj from project.yml
 #   make build        Release build -> dist/GuacTerm.app
 #   make run          build, then launch
+#   make test         run the unit tests (no screen, no shell)
 #   make clean        remove build/ and dist/
 #   make dist         Developer ID sign + notarize + staple -> dist/GuacTerm-<version>.zip
 #   make dmg          build, then package dist/GuacTerm-<version>.dmg
@@ -19,16 +20,22 @@
 
 XCODEGEN ?= xcodegen
 
-SWIFT_SOURCES = Sources scripts/generate-themes.swift
+SWIFT_SOURCES = Sources Tests scripts/generate-themes.swift
 SHELL_SOURCES = $(wildcard scripts/*.sh)
 
-.PHONY: project build run dmg icon clean dist appcast release themes themes-check setup-dev format lint check
+.PHONY: project build run test dmg icon clean dist appcast release themes themes-check setup-dev format lint check
 
 project:
 	$(XCODEGEN) generate
 
 build:
 	./scripts/build.sh
+
+test: project
+	xcodebuild -project GuacTerm.xcodeproj -scheme GuacTerm \
+		-configuration Debug -derivedDataPath build/DerivedData \
+		-destination 'platform=macOS' -skipPackagePluginValidation \
+		-skipMacroValidation -quiet test
 
 run: build
 	open dist/GuacTerm.app

@@ -159,5 +159,22 @@ targets:
       Debug: Config/Signing.xcconfig
       Release: Config/Signing.xcconfig
     scheme:
-      testTargets: []
+      testTargets:
+        - GuacTermTests
       gatherCoverageData: false
+
+  GuacTermTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: Tests/GuacTermTests
+        name: GuacTermTests
+        type: group
+    dependencies:
+      - target: GuacTerm
+      - package: SwiftTerm
+        product: SwiftTerm
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.guacterm.GuacTermTests
+        GENERATE_INFOPLIST_FILE: YES

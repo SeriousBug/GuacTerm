@@ -25,9 +25,11 @@
 		733F911B05DDE7A602CFB81B /* SwiftTerm in Frameworks */ = {isa = PBXBuildFile; productRef = FDD75102773CD3E970A8E85F /* SwiftTerm */; };
 		7BFDCC159F8D4BDBB1F6D82D /* SettingsRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 961231E6B190C1C832C449B4 /* SettingsRow.swift */; };
 		89485AB678080195520B86F0 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5E83154D8ED22CE2E895D6 /* AppDelegate.swift */; };
+		8DE16CCF44AEA9CA9B15B5D8 /* TabStopsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB051F15447F84C68F2A5635 /* TabStopsTests.swift */; };
 		97A660E8E5A01428C0665635 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 36F9E7078F8D2013E27B8454 /* Sparkle */; };
 		A39FB7F0A8CE3FB8079A8048 /* Themes.json in Resources */ = {isa = PBXBuildFile; fileRef = 2B540498513A8BCEFC05F48C /* Themes.json */; };
 		A8C5B2C4F6B9305C7B054FCA /* TerminalTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91CE064D6D1B55E439713770 /* TerminalTheme.swift */; };
+		D1BC1CFDC66C211005C05FD7 /* SwiftTerm in Frameworks */ = {isa = PBXBuildFile; productRef = 9C6A1743D2787B0A3C050955 /* SwiftTerm */; };
 		E394F4EA71CC8B4B21DC30E6 /* AppInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A096EABF51FF852CDCED8B1 /* AppInfo.swift */; };
 		EA70998C209E5C71A4399A92 /* SettingsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECE8FCE2E4F981FE9CD133A5 /* SettingsWindowController.swift */; };
 		EF23BCDDA29581A2F98A152C /* ThemePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99A4A0FCF3E76EA0E4FBA709 /* ThemePicker.swift */; };
@@ -35,6 +37,16 @@
 		F374B42E734DFA96896B564B /* UpdatesSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE0B757F8B2ADBD551637D9B /* UpdatesSettings.swift */; };
 		FCD60AE933F90AAEE5767DEB /* ThemeCatalogLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D7F74DFC64B72FD4D71CC54 /* ThemeCatalogLoader.swift */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		9A418E11D8AE61B2C71F27EE /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = CC31B3D5B0C835928DBEEBF0 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A766F54C5E0C067B712F9F98;
+			remoteInfo = GuacTerm;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		132300FDA111E39C4C84BFFB /* DropDownPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DropDownPanel.swift; sourceTree = "<group>"; };
@@ -60,6 +72,8 @@
 		AB5E83154D8ED22CE2E895D6 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		AC5E617A76F0F4F4CE1D826F /* ShortcutRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutRecorder.swift; sourceTree = "<group>"; };
 		BE0B757F8B2ADBD551637D9B /* UpdatesSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdatesSettings.swift; sourceTree = "<group>"; };
+		C90FC3EC8919B0616A69EF2E /* GuacTermTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GuacTermTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		CB051F15447F84C68F2A5635 /* TabStopsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabStopsTests.swift; sourceTree = "<group>"; };
 		DF2D938DC0E9B6FD47117699 /* Updater.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Updater.swift; sourceTree = "<group>"; };
 		E5D07E1E11976E4646BAD272 /* TerminalController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalController.swift; sourceTree = "<group>"; };
 		ECE8FCE2E4F981FE9CD133A5 /* SettingsWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsWindowController.swift; sourceTree = "<group>"; };
@@ -73,6 +87,14 @@
 			files = (
 				733F911B05DDE7A602CFB81B /* SwiftTerm in Frameworks */,
 				97A660E8E5A01428C0665635 /* Sparkle in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		192C7C465AF23F67C711E242 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D1BC1CFDC66C211005C05FD7 /* SwiftTerm in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -118,12 +140,22 @@
 			path = GuacTerm;
 			sourceTree = "<group>";
 		};
+		86F23B4D62D7D2D2B0555B8E /* GuacTermTests */ = {
+			isa = PBXGroup;
+			children = (
+				CB051F15447F84C68F2A5635 /* TabStopsTests.swift */,
+			);
+			name = GuacTermTests;
+			path = GuacTermTests;
+			sourceTree = "<group>";
+		};
 		8C40053375E52F9D7F5917A1 = {
 			isa = PBXGroup;
 			children = (
 				A7F2CE65FF2AECF2F5DF0C6C /* Config */,
 				F476B87A6CE16BD9860D5F86 /* Resources */,
 				20AAC4C008815C86021DAAA2 /* Sources */,
+				EE10621DD60321875D2F1BAE /* Tests */,
 				995F32F293EDD05BBF6A3E99 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -132,6 +164,7 @@
 			isa = PBXGroup;
 			children = (
 				35F15A4242AB6209288A50D1 /* GuacTerm.app */,
+				C90FC3EC8919B0616A69EF2E /* GuacTermTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -142,6 +175,14 @@
 				66EEBDE3C5CCE5BF16151329 /* Signing.xcconfig */,
 			);
 			path = Config;
+			sourceTree = "<group>";
+		};
+		EE10621DD60321875D2F1BAE /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				86F23B4D62D7D2D2B0555B8E /* GuacTermTests */,
+			);
+			path = Tests;
 			sourceTree = "<group>";
 		};
 		F476B87A6CE16BD9860D5F86 /* Resources */ = {
@@ -177,6 +218,26 @@
 			productReference = 35F15A4242AB6209288A50D1 /* GuacTerm.app */;
 			productType = "com.apple.product-type.application";
 		};
+		BCC4CFC472A992EC150BC544 /* GuacTermTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6D7B6226141AB22CC09C4600 /* Build configuration list for PBXNativeTarget "GuacTermTests" */;
+			buildPhases = (
+				54B3FCCDD8EF1A9D4F6DF488 /* Sources */,
+				192C7C465AF23F67C711E242 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				30713FFE5AEC7A6DD0D4B06B /* PBXTargetDependency */,
+			);
+			name = GuacTermTests;
+			packageProductDependencies = (
+				9C6A1743D2787B0A3C050955 /* SwiftTerm */,
+			);
+			productName = GuacTermTests;
+			productReference = C90FC3EC8919B0616A69EF2E /* GuacTermTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -211,6 +272,7 @@
 			projectRoot = "";
 			targets = (
 				A766F54C5E0C067B712F9F98 /* GuacTerm */,
+				BCC4CFC472A992EC150BC544 /* GuacTermTests */,
 			);
 		};
 /* End PBXProject section */
@@ -228,6 +290,14 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		54B3FCCDD8EF1A9D4F6DF488 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8DE16CCF44AEA9CA9B15B5D8 /* TabStopsTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		D611FC518A6E309944D76DFF /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -259,6 +329,14 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		30713FFE5AEC7A6DD0D4B06B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A766F54C5E0C067B712F9F98 /* GuacTerm */;
+			targetProxy = 9A418E11D8AE61B2C71F27EE /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		60378B13D24A69B132ECFEE9 /* Release */ = {
@@ -343,6 +421,40 @@
 				SDKROOT = macosx;
 				SWIFT_STRICT_CONCURRENCY = complete;
 				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		AE1A154D3DE596A50C1B5DBA /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.guacterm.GuacTermTests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/GuacTerm.app/Contents/MacOS/GuacTerm";
+			};
+			name = Release;
+		};
+		E14355A2382C0C142C2F7895 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.guacterm.GuacTermTests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/GuacTerm.app/Contents/MacOS/GuacTerm";
 			};
 			name = Debug;
 		};
@@ -456,6 +568,15 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
+		6D7B6226141AB22CC09C4600 /* Build configuration list for PBXNativeTarget "GuacTermTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E14355A2382C0C142C2F7895 /* Debug */,
+				AE1A154D3DE596A50C1B5DBA /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
@@ -482,6 +603,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 574543AED2C1AC34818D0D94 /* XCRemoteSwiftPackageReference "Sparkle" */;
 			productName = Sparkle;
+		};
+		9C6A1743D2787B0A3C050955 /* SwiftTerm */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6F7CD0FB8D743EF90EC5D120 /* XCRemoteSwiftPackageReference "SwiftTerm" */;
+			productName = SwiftTerm;
 		};
 		FDD75102773CD3E970A8E85F /* SwiftTerm */ = {
 			isa = XCSwiftPackageProductDependency;
