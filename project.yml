@@ -67,6 +67,13 @@ targets:
         type: file
         buildPhase: resources
         optional: false
+      # The app icon. scripts/make-icon.sh renders these PNGs from
+      # Resources/logo.svg, which stays the source of the artwork.
+      - path: Resources/Assets.xcassets
+        name: Assets.xcassets
+        type: file
+        buildPhase: resources
+        optional: false
     dependencies:
       - package: SwiftTerm
         product: SwiftTerm
@@ -79,6 +86,7 @@ targets:
         CFBundleDevelopmentRegion: en
         CFBundleDisplayName: GuacTerm
         CFBundleExecutable: $(EXECUTABLE_NAME)
+        CFBundleIconFile: AppIcon
         CFBundleIdentifier: $(PRODUCT_BUNDLE_IDENTIFIER)
         CFBundleInfoDictionaryVersion: "6.0"
         CFBundleName: $(PRODUCT_NAME)
@@ -120,6 +128,8 @@ targets:
         CURRENT_PROJECT_VERSION: "1"
         INFOPLIST_FILE: Resources/Info.plist
         COMBINE_HIDPI_IMAGES: YES
+        # Compiles Resources/Assets.xcassets into AppIcon.icns.
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         LD_RUNPATH_SEARCH_PATHS:
           - $(inherited)
           - "@executable_path/../Frameworks"

@@ -18,6 +18,7 @@
 		5A2B83C08C94BE9C52454B87 /* Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66EBE5BD5F4A31637E422657 /* Settings.swift */; };
 		5CE44A5036C7250744FDBB5F /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BFF5BD7CD25C9E2497C3C2B /* SettingsView.swift */; };
 		6504FC56E417B6F8F4250763 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 406C4EC712562B5C4A91A24D /* main.swift */; };
+		6CE4D84482342CE751AA255F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5915D1F3C271F1A74FCD7851 /* Assets.xcassets */; };
 		73053CA5998E3CA0A123975F /* DropDownPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 132300FDA111E39C4C84BFFB /* DropDownPanel.swift */; };
 		733F911B05DDE7A602CFB81B /* SwiftTerm in Frameworks */ = {isa = PBXBuildFile; productRef = FDD75102773CD3E970A8E85F /* SwiftTerm */; };
 		89485AB678080195520B86F0 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5E83154D8ED22CE2E895D6 /* AppDelegate.swift */; };
@@ -40,6 +41,7 @@
 		406C4EC712562B5C4A91A24D /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		4084FDD3A9DCBD151BEB1ED2 /* ShellEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellEnvironment.swift; sourceTree = "<group>"; };
 		43F8599F367924B343524BCC /* GuacTerminalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuacTerminalView.swift; sourceTree = "<group>"; };
+		5915D1F3C271F1A74FCD7851 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		5EEC4A82A371ED60B51CAA6F /* ThemeCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeCatalog.swift; sourceTree = "<group>"; };
 		66EBE5BD5F4A31637E422657 /* Settings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings.swift; sourceTree = "<group>"; };
 		66EEBDE3C5CCE5BF16151329 /* Signing.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Signing.xcconfig; sourceTree = "<group>"; };
@@ -131,6 +133,7 @@
 		F476B87A6CE16BD9860D5F86 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				5915D1F3C271F1A74FCD7851 /* Assets.xcassets */,
 				2B540498513A8BCEFC05F48C /* Themes.json */,
 			);
 			path = Resources;
@@ -201,6 +204,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6CE4D84482342CE751AA255F /* Assets.xcassets in Resources */,
 				A39FB7F0A8CE3FB8079A8048 /* Themes.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
