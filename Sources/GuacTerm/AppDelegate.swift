@@ -38,7 +38,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let launchedBefore = defaults.bool(forKey: "GuacTermHasLaunchedBefore")
         defaults.set(true, forKey: "GuacTermHasLaunchedBefore")
 
-        if !launchedBefore || CommandLine.arguments.contains("--show") {
+        // Two launch flags: `--show` drops the terminal down (and is what a
+        // first run does anyway), `--settings` opens the pane instead, which is
+        // how you get to it without hunting for the menu bar item.
+        if CommandLine.arguments.contains("--settings") {
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(350))
+                self.openSettings()
+            }
+        } else if !launchedBefore || CommandLine.arguments.contains("--show") {
             Task { @MainActor in
                 try? await Task.sleep(for: .milliseconds(350))
                 self.terminal.show()
@@ -77,7 +85,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         terminal.hide(animated: false)
 
         if settingsWindowController == nil {
-            settingsWindowController = SettingsWindowController(settings: settings)
+            settingsWindowController = SettingsWindowController(
+                settings: settings,
+                showsThemePickerOnAppear: CommandLine.arguments.contains("--theme-picker")
+            )
         }
         NSApp.activate()
         settingsWindowController?.showWindow(nil)

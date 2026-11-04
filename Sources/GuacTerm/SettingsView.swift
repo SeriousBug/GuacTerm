@@ -10,10 +10,17 @@ struct SettingsView: View {
 
     @ObservedObject var settings: Settings
 
+    /// Opens the theme sheet as soon as the pane appears, so the picker can be
+    /// reached from the `--theme-picker` launch flag (and from screenshots).
+    var showsThemePickerOnAppear = false
+
     /// Building these lists is expensive — `NSFontManager` enumerates every
     /// installed family — so they are read once when the pane appears.
     @State private var shellPaths: [String] = []
     @State private var fontFamilies: [String] = []
+
+    /// Presents ``ThemePicker`` as a sheet.
+    @State private var showingThemePicker = false
 
     private let padding: CGFloat = 22
 
@@ -33,7 +40,13 @@ struct SettingsView: View {
             .padding(.bottom, 18)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .onAppear(perform: loadSystemLists)
+        .onAppear {
+            loadSystemLists()
+            if showsThemePickerOnAppear { showingThemePicker = true }
+        }
+        .sheet(isPresented: $showingThemePicker) {
+            ThemePicker(settings: settings)
+        }
     }
 
     // MARK: - Header and footer
@@ -105,6 +118,9 @@ struct SettingsView: View {
             themeRow
             Divider()
 
+            glassRows
+            Divider()
+
             row(
                 "Hide When Focus Is Lost",
                 caption: "Drop the terminal away when you switch to another app."
@@ -167,25 +183,71 @@ struct SettingsView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    /// The catalog holds ~890 schemes, so the menu is only ever a button: the
+    /// list itself lives in the ``ThemePicker`` sheet.
     private var themeRow: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 16) {
                 Text("Theme")
                     .fixedSize()
                 Spacer(minLength: 12)
-                Picker("Theme", selection: $settings.themeID) {
-                    ForEach(TerminalTheme.catalog) { theme in
-                        Text(theme.name).tag(theme.id)
+                Button {
+                    showingThemePicker = true
+                } label: {
+                    HStack(spacing: 4) {
+                        Text(settings.theme.name)
+                        Image(systemName: "chevron.up.chevron.down")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
                     }
                 }
-                .labelsHidden()
-                .pickerStyle(.menu)
-                .fixedSize()
+                .help("Browse all \(TerminalTheme.catalog.count) themes")
             }
+
             ThemePreview(theme: settings.theme)
+                .contentShape(Rectangle())
+                .onTapGesture { showingThemePicker = true }
+                .help("Browse all \(TerminalTheme.catalog.count) themes")
         }
         .padding(.vertical, 11)
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// Liquid Glass needs macOS 26, so on older systems these rows are simply
+    /// absent rather than shown greyed out.
+    @ViewBuilder
+    private var glassRows: some View {
+        if Settings.glassIsSupported {
+            VStack(alignment: .leading, spacing: 0) {
+                row(
+                    "Liquid Glass",
+                    caption: settings.glassBackground
+                        ? "The theme is painted over macOS's glass material, so the desktop shows through as it moves behind it."
+                        : "Put the terminal on macOS's Liquid Glass material instead of a solid background."
+                ) {
+                    Toggle("Liquid Glass", isOn: $settings.glassBackground)
+                        .labelsHidden()
+                        .toggleStyle(.switch)
+                }
+
+                if settings.glassBackground {
+                    Divider()
+                    row(
+                        "Glass Tint",
+                        caption: "How much of the theme covers the glass. Lower shows more of the desktop, and is harder to read on busy backgrounds."
+                    ) {
+                        HStack(spacing: 10) {
+                            Slider(value: glassTintBinding, in: Settings.Limits.glassTint)
+                                .frame(width: 190)
+                            Text(settings.glassTint, format: .percent.precision(.fractionLength(0)))
+                                .monospacedDigit()
+                                .foregroundStyle(.secondary)
+                                .frame(width: 44, alignment: .trailing)
+                        }
+                    }
+                }
+            }
+        }
     }
 
     // MARK: - Controls
@@ -283,6 +345,13 @@ struct SettingsView: View {
         Binding(
             get: { settings.fontSize },
             set: { settings.fontSize = Self.clamp($0, to: Settings.Limits.fontSize) }
+        )
+    }
+
+    private var glassTintBinding: Binding<Double> {
+        Binding(
+            get: { settings.glassTint },
+            set: { settings.glassTint = Self.clamp($0, to: Settings.Limits.glassTint) }
         )
     }
 

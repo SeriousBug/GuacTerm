@@ -6,8 +6,15 @@ import SwiftUI
 @MainActor
 final class SettingsWindowController: NSWindowController {
 
-    init(settings: Settings) {
-        let hosting = NSHostingController(rootView: SettingsView(settings: settings))
+    /// - Parameter showsThemePickerOnAppear: open the theme sheet immediately,
+    ///   which is what the `--theme-picker` launch flag asks for.
+    init(settings: Settings, showsThemePickerOnAppear: Bool = false) {
+        let hosting = NSHostingController(
+            rootView: SettingsView(
+                settings: settings,
+                showsThemePickerOnAppear: showsThemePickerOnAppear
+            )
+        )
         hosting.sizingOptions = []
 
         let window = NSWindow(contentViewController: hosting)

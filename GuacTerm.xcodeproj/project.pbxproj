@@ -23,6 +23,7 @@
 		A8C5B2C4F6B9305C7B054FCA /* TerminalTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91CE064D6D1B55E439713770 /* TerminalTheme.swift */; };
 		E394F4EA71CC8B4B21DC30E6 /* AppInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A096EABF51FF852CDCED8B1 /* AppInfo.swift */; };
 		EA70998C209E5C71A4399A92 /* SettingsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECE8FCE2E4F981FE9CD133A5 /* SettingsWindowController.swift */; };
+		EF23BCDDA29581A2F98A152C /* ThemePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99A4A0FCF3E76EA0E4FBA709 /* ThemePicker.swift */; };
 		F3553908B6FBC4F2C99DE743 /* ShortcutRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC5E617A76F0F4F4CE1D826F /* ShortcutRecorder.swift */; };
 		FCD60AE933F90AAEE5767DEB /* ThemeCatalogLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D7F74DFC64B72FD4D71CC54 /* ThemeCatalogLoader.swift */; };
 /* End PBXBuildFile section */
@@ -42,6 +43,7 @@
 		6A096EABF51FF852CDCED8B1 /* AppInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppInfo.swift; sourceTree = "<group>"; };
 		8D7F74DFC64B72FD4D71CC54 /* ThemeCatalogLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeCatalogLoader.swift; sourceTree = "<group>"; };
 		91CE064D6D1B55E439713770 /* TerminalTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalTheme.swift; sourceTree = "<group>"; };
+		99A4A0FCF3E76EA0E4FBA709 /* ThemePicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemePicker.swift; sourceTree = "<group>"; };
 		AB5E83154D8ED22CE2E895D6 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		AC5E617A76F0F4F4CE1D826F /* ShortcutRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutRecorder.swift; sourceTree = "<group>"; };
 		E5D07E1E11976E4646BAD272 /* TerminalController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalController.swift; sourceTree = "<group>"; };
@@ -88,6 +90,7 @@
 				91CE064D6D1B55E439713770 /* TerminalTheme.swift */,
 				5EEC4A82A371ED60B51CAA6F /* ThemeCatalog.swift */,
 				8D7F74DFC64B72FD4D71CC54 /* ThemeCatalogLoader.swift */,
+				99A4A0FCF3E76EA0E4FBA709 /* ThemePicker.swift */,
 			);
 			name = GuacTerm;
 			path = GuacTerm;
@@ -218,6 +221,7 @@
 				A8C5B2C4F6B9305C7B054FCA /* TerminalTheme.swift in Sources */,
 				08F59EF57B842C5918DB6259 /* ThemeCatalog.swift in Sources */,
 				FCD60AE933F90AAEE5767DEB /* ThemeCatalogLoader.swift in Sources */,
+				EF23BCDDA29581A2F98A152C /* ThemePicker.swift in Sources */,
 				6504FC56E417B6F8F4250763 /* main.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

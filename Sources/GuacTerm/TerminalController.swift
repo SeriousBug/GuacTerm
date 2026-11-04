@@ -24,6 +24,21 @@ final class TerminalController: NSObject {
     private var sessionAlive = false
     private var needsFreshSession = false
 
+    /// The Liquid Glass material behind the terminal. Typed as `NSView` because
+    /// the concrete class only exists on macOS 26 and this property cannot carry
+    /// an availability attribute.
+    private var glassView: NSView?
+
+    /// Holder for the terminal view. It is what moves between the container and
+    /// the glass effect's `contentView`, so the terminal's own view is created
+    /// once and never re-parented behind SwiftTerm's back.
+    private let terminalHost: NSView = {
+        let view = NSView(frame: .zero)
+        view.autoresizingMask = [.width, .height]
+        view.wantsLayer = true
+        return view
+    }()
+
     private var visible = false
     private var animationGeneration = 0
     private var shownAt: Date?
@@ -48,6 +63,7 @@ final class TerminalController: NSObject {
     private func configurePanel() {
         container.autoresizingMask = [.width, .height]
         panel.contentView = container
+        attachTerminalHost(to: container)
         panel.isFloatingPanel = true
         // Above normal windows, below the system's own overlays.
         panel.level = .statusBar
@@ -301,7 +317,7 @@ final class TerminalController: NSObject {
         let view = GuacTerminalView(frame: bounds, font: settings.font, options: options)
         view.autoresizingMask = [.width, .height]
         view.processDelegate = self
-        container.addSubview(view)
+        terminalHost.addSubview(view)
         terminalView = view
 
         needsFreshSession = false
@@ -342,7 +358,11 @@ final class TerminalController: NSObject {
 
     private func applyAppearance() {
         let theme = settings.theme
-        container.backgroundColor = theme.nsBackground
+        let glass = settings.usesGlass
+
+        updateGlass()
+
+        container.backgroundColor = glass ? .clear : theme.nsBackground
         panel.backgroundColor = .clear
         panel.invalidateShadow()
 
@@ -352,7 +372,74 @@ final class TerminalController: NSObject {
         terminalView.nativeForegroundColor = theme.nsForeground
         terminalView.caretColor = theme.nsCursor
         terminalView.installColors(theme.terminalPalette)
-        terminalView.layer?.backgroundColor = theme.nsBackground.cgColor
+
+        // Over glass the theme is painted at partial opacity so the material
+        // (and the desktop behind it) shows through. SwiftTerm keeps its backing
+        // layer clear in that case, and `translucentCellBackgrounds` stops ANSI
+        // backgrounds from punching opaque holes in the glass.
+        terminalView.translucentCellBackgrounds = glass
+        terminalView.backgroundOpacity = glass ? settings.glassTint : 1
+        terminalView.layer?.backgroundColor = glass
+            ? NSColor.clear.cgColor
+            : theme.nsBackground.cgColor
+    }
+
+    /// Puts the terminal's host view inside `parent`, filling it.
+    private func attachTerminalHost(to parent: NSView) {
+        if terminalHost.superview !== parent {
+            terminalHost.removeFromSuperview()
+        }
+        terminalHost.autoresizingMask = [.width, .height]
+        terminalHost.frame = parent.bounds
+        parent.addSubview(terminalHost)
+    }
+
+    /// Adds or removes the `NSGlassEffectView` that sits under the terminal.
+    ///
+    /// The panel is already non-opaque with a clear background, which is the
+    /// part only AppKit can do: it lets the material sample the desktop and the
+    /// windows behind the panel instead of the terminal's own window.
+    private func updateGlass() {
+        guard #available(macOS 26.0, *) else { return }
+
+        guard settings.usesGlass else {
+            guard let glass = glassView else { return }
+            (glass as? NSGlassEffectView)?.contentView = nil
+            glass.removeFromSuperview()
+            glassView = nil
+            attachTerminalHost(to: container)
+            return
+        }
+
+        let glass: NSGlassEffectView
+        if let existing = glassView as? NSGlassEffectView {
+            glass = existing
+        } else {
+            glass = NSGlassEffectView()
+            glass.style = .regular
+            // The container already clips the bottom corners; a second, larger
+            // radius here would leave a gap along the top edge.
+            glass.cornerRadius = 0
+            glass.autoresizingMask = [.width, .height]
+            glass.frame = container.bounds
+            container.addSubview(glass)
+            glassView = glass
+        }
+
+        // A hint of the theme in the material itself, so the glass reads as
+        // Guac-colored rather than as the desktop's own colors.
+        glass.tintColor = settings.theme.nsBackground.withAlphaComponent(0.35)
+
+        // The material composites above any *sibling* view, so the terminal has
+        // to live inside the glass effect's documented `contentView`; ordering
+        // subviews around it does not work (NSGlassEffectView.h says so).
+        if terminalHost.superview !== glass {
+            glass.contentView = nil
+            attachTerminalHost(to: glass)
+            glass.contentView = terminalHost
+        }
+        glass.frame = container.bounds
+        terminalHost.frame = glass.bounds
     }
 }
 

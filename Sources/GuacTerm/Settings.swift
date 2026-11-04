@@ -46,7 +46,17 @@ final class Settings: ObservableObject {
         static let scrollback = 0...1_000_000
         static let height = 0.15...1.0
         static let fontSize = 8.0...48.0
+        /// Below 20% the theme is barely there and text stops being readable.
+        static let glassTint = 0.2...1.0
     }
+
+    /// Liquid Glass arrived in macOS 26. On anything older the panel simply
+    /// keeps its solid theme background, and Settings hides the controls.
+    static var glassIsSupported: Bool {
+        if #available(macOS 26.0, *) { return true }
+        return false
+    }
+
 
     // MARK: - Stored settings
 
@@ -116,6 +126,29 @@ final class Settings: ObservableObject {
         didSet { persist() }
     }
 
+    /// Draw the terminal on macOS's Liquid Glass material instead of a solid
+    /// theme background. Ignored on systems without `NSGlassEffectView`.
+    @Published var glassBackground: Bool {
+        didSet {
+            persist()
+            onAppearanceChange?()
+        }
+    }
+
+    /// How much of the theme background is painted over that glass: 1 is
+    /// effectively solid, 0.2 lets the desktop through almost untouched.
+    @Published var glassTint: Double {
+        didSet {
+            persist()
+            onAppearanceChange?()
+        }
+    }
+
+    /// True only when the user asked for glass *and* the system can draw it.
+    var usesGlass: Bool {
+        glassBackground && Self.glassIsSupported
+    }
+
     /// Start GuacTerm when the user logs in. Change it through
     /// ``setLaunchAtLogin(_:)`` so the system's registration stays in sync.
     @Published private(set) var launchAtLogin: Bool
@@ -181,6 +214,8 @@ final class Settings: ObservableObject {
         case fontName
         case fontSize
         case hideOnFocusLoss
+        case glassBackground
+        case glassTint
         case launchAtLogin
         case appearanceMode
     }
@@ -200,6 +235,8 @@ final class Settings: ObservableObject {
         self.fontName = defaults.string(forKey: Key.fontName.rawValue) ?? Self.defaultFontName
         self.fontSize = defaults.object(forKey: Key.fontSize.rawValue) as? Double ?? 13
         self.hideOnFocusLoss = defaults.object(forKey: Key.hideOnFocusLoss.rawValue) as? Bool ?? true
+        self.glassBackground = defaults.object(forKey: Key.glassBackground.rawValue) as? Bool ?? false
+        self.glassTint = defaults.object(forKey: Key.glassTint.rawValue) as? Double ?? 0.65
         self.appearanceMode = defaults
             .string(forKey: Key.appearanceMode.rawValue)
             .flatMap(AppearanceMode.init(rawValue:)) ?? .system
@@ -218,6 +255,8 @@ final class Settings: ObservableObject {
         defaults.set(fontName, forKey: Key.fontName.rawValue)
         defaults.set(fontSize, forKey: Key.fontSize.rawValue)
         defaults.set(hideOnFocusLoss, forKey: Key.hideOnFocusLoss.rawValue)
+        defaults.set(glassBackground, forKey: Key.glassBackground.rawValue)
+        defaults.set(glassTint, forKey: Key.glassTint.rawValue)
         defaults.set(launchAtLogin, forKey: Key.launchAtLogin.rawValue)
         defaults.set(appearanceMode.rawValue, forKey: Key.appearanceMode.rawValue)
     }
