@@ -18,3 +18,11 @@ CODE_SIGN_STYLE = Manual
 CODE_SIGN_IDENTITY = -
 DEVELOPMENT_TEAM =
 PROVISIONING_PROFILE_SPECIFIER =
+
+// The Hardened Runtime, off for the checked-in default because the default
+// identity is ad-hoc ("-"): the runtime only loads an embedded framework that is
+// signed like the app (same team id), and an ad-hoc app has no team id at all,
+// so GuacTerm could not load the Sparkle framework it embeds. Release builds
+// turn it on — scripts/notarize.sh passes ENABLE_HARDENED_RUNTIME=YES — where a
+// Developer ID identity gives it something to validate against.
+ENABLE_HARDENED_RUNTIME = NO

@@ -53,6 +53,12 @@
 	<false/>
 	<key>NSSupportsSuddenTermination</key>
 	<false/>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
+	<key>SUFeedURL</key>
+	<string>https://github.com/SeriousBug/GuacTerm/releases/latest/download/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>I7w7y8pXITweUpMcTmtcV/AFQd21QmzWVH85f3EaNQg=</string>
 	<key>UTImportedTypeDeclarations</key>
 	<array>
 		<dict>

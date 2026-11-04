@@ -18,6 +18,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             rootView: SettingsView(
                 settings: settings,
                 library: ThemeLibrary.shared,
+                updater: Updater.shared,
                 showsThemePickerOnAppear: showsThemePickerOnAppear
             )
         )

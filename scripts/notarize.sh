@@ -15,6 +15,8 @@
 #                      Application" identity in the keychain
 #   DEVELOPMENT_TEAM   team id; defaults to the one in the identity name
 #   TEAM_ID            team id used for --apple-id notarization (falls back to DEVELOPMENT_TEAM)
+#   BUILD_NUMBER       CFBundleVersion to stamp on the build; scripts/release.sh
+#                      passes the commit count, so each release outranks the last
 #
 # Result: dist/GuacTerm-<MARKETING_VERSION>.zip containing the stapled app.
 # No secrets are stored in this script or in the repository.
@@ -97,6 +99,12 @@ echo "==> Team:     $TEAM_ID_RESOLVED"
 # --------------------------------------------------------------------- build
 echo "==> Building $APP_NAME (Release, Developer ID)"
 mkdir -p "$DERIVED_DATA" "$DIST_DIR"
+
+# Sparkle picks the newer of two builds by CFBundleVersion, so a release that
+# reclaims the default of 1 would never be offered to anyone. scripts/release.sh
+# passes a number that grows with every commit.
+BUILD_NUMBER_ARG=(CURRENT_PROJECT_VERSION="${BUILD_NUMBER:-1}")
+
 xcodebuild \
     -project GuacTerm.xcodeproj \
     -scheme GuacTerm \
@@ -105,6 +113,7 @@ xcodebuild \
     -destination "platform=macOS" \
     -skipPackagePluginValidation \
     -skipMacroValidation \
+    "${BUILD_NUMBER_ARG[@]}" \
     CODE_SIGN_STYLE=Manual \
     CODE_SIGN_IDENTITY="$IDENTITY" \
     DEVELOPMENT_TEAM="$TEAM_ID_RESOLVED" \

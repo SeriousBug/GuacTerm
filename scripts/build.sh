@@ -62,6 +62,9 @@ XCODEBUILD_ARGS=(
 # Optional signing overrides; when unset the xcconfig defaults (ad-hoc) apply.
 if [[ -n "${SIGNING_IDENTITY:-}" ]]; then
     XCODEBUILD_ARGS+=(CODE_SIGN_IDENTITY="$SIGNING_IDENTITY")
+    # The checked-in default is ad-hoc, which cannot carry a hardened runtime
+    # (Config/Signing.xcconfig); a real identity gets one, like a release does.
+    [[ "$SIGNING_IDENTITY" == "-" ]] || XCODEBUILD_ARGS+=(ENABLE_HARDENED_RUNTIME=YES)
 fi
 if [[ -n "${DEVELOPMENT_TEAM:-}" ]]; then
     XCODEBUILD_ARGS+=(DEVELOPMENT_TEAM="$DEVELOPMENT_TEAM")

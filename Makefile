@@ -6,6 +6,8 @@
 #   make clean        remove build/ and dist/
 #   make dist         Developer ID sign + notarize + staple -> dist/GuacTerm-<version>.zip
 #   make dmg          build, then package dist/GuacTerm-<version>.dmg
+#   make appcast      sign dist/GuacTerm-<version>.zip and write the feed -> dist/appcast.xml
+#   make release      dist + dmg + appcast, then publish them as a GitHub release
 #   make icon         regenerate the app icon PNGs from Resources/logo.svg
 #   make themes       regenerate Resources/Themes.json from the pinned upstream commit
 #   make themes-check fail if Resources/Themes.json does not match that commit
@@ -20,7 +22,7 @@ XCODEGEN ?= xcodegen
 SWIFT_SOURCES = Sources scripts/generate-themes.swift
 SHELL_SOURCES = $(wildcard scripts/*.sh)
 
-.PHONY: project build run dmg icon clean dist themes themes-check setup-dev format lint check
+.PHONY: project build run dmg icon clean dist appcast release themes themes-check setup-dev format lint check
 
 project:
 	$(XCODEGEN) generate
@@ -42,6 +44,12 @@ icon:
 
 dist:
 	./scripts/notarize.sh
+
+appcast:
+	./scripts/appcast.sh
+
+release:
+	./scripts/release.sh
 
 themes:
 	./scripts/themes.sh

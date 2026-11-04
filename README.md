@@ -25,6 +25,7 @@ Install XCode command line tools and [xcodegen](https://github.com/yonaskolb/Xco
 make project     # regenerate GuacTerm.xcodeproj from project.yml
 make run         # build and launch
 make dmg         # build and package a disk image in dist/
+make release     # notarize, package, sign the update feed, publish a release
 ```
 
 Run `./scripts/setup-dev.sh` to install the pre-commit hook
@@ -36,7 +37,8 @@ GuacTerm is licensed under [MIT](LICENSE).
 
 It bundles the color schemes of
 [iTerm2-Color-Schemes](https://github.com/mbadolato/iTerm2-Color-Schemes) and
-links [SwiftTerm](https://github.com/migueldeicaza/SwiftTerm), both MIT. Their
+links [SwiftTerm](https://github.com/migueldeicaza/SwiftTerm) and
+[Sparkle](https://github.com/sparkle-project/Sparkle), all MIT. Their
 notices, and the per-scheme credits, are reproduced in
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 

@@ -7,6 +7,7 @@ import UniformTypeIdentifiers
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private let settings = Settings.shared
     private let themes = ThemeLibrary.shared
+    private let updater = Updater.shared
     private let hotKey = GlobalHotKey()
 
     private var terminal: TerminalController!
@@ -89,6 +90,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             .applicationVersion: AppInfo.version,
             .version: AppInfo.build,
         ])
+    }
+
+    @objc private func checkForUpdates() {
+        updater.checkForUpdates()
     }
 
     // MARK: - Importing themes
@@ -252,6 +257,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(item(titled: "Import Theme…", action: #selector(importTheme), keyEquivalent: ""))
         menu.addItem(item(titled: "Settings…", action: #selector(openSettings), keyEquivalent: ","))
         menu.addItem(.separator())
+        if updater.isAvailable {
+            menu.addItem(
+                item(titled: "Check for Updates…", action: #selector(checkForUpdates), keyEquivalent: "")
+            )
+        }
         menu.addItem(item(titled: "Quit \(AppInfo.name)", action: #selector(quit), keyEquivalent: "q"))
 
         statusItem.menu = menu
@@ -273,6 +283,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let appMenuItem = NSMenuItem()
         let appMenu = NSMenu()
         appMenu.addItem(item(titled: "About \(AppInfo.name)", action: #selector(showAbout), keyEquivalent: ""))
+        if updater.isAvailable {
+            appMenu.addItem(
+                item(titled: "Check for Updates…", action: #selector(checkForUpdates), keyEquivalent: "")
+            )
+        }
         appMenu.addItem(.separator())
         appMenu.addItem(item(titled: "Settings…", action: #selector(openSettings), keyEquivalent: ","))
         appMenu.addItem(.separator())
