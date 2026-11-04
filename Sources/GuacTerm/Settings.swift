@@ -387,8 +387,8 @@ final class Settings: ObservableObject {
 
         // Resolved against `PATH`, so this covers Homebrew on Apple silicon
         // (`/opt/homebrew/bin`) as well as Intel and manual installs. A name that
-        // is not installed, like `termux`, never appears.
-        candidates += ["fish", "nu", "tmux", "zellij", "termux"].compactMap(resolveExecutable)
+        // is not installed never appears.
+        candidates += ["fish", "nu", "tmux", "zellij"].compactMap(resolveExecutable)
 
         var seen = Set<String>()
         return candidates.compactMap(resolveExecutable).filter { seen.insert($0).inserted }
