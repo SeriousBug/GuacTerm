@@ -75,6 +75,34 @@ if [[ ! -d "$BUILT_APP" ]]; then
     exit 1
 fi
 
+# Check the bundle, not project.yml.
+#
+# A resources phase is configured by a path in project.yml, so a typo there does
+# not fail the build: the app still launches and quietly offers only its two
+# built-in themes. Same for the Info.plist, which is generated into Contents/ and
+# must not also be copied into Resources/ where the real one would shadow it.
+# Both used to be checked by scripts/check-bundled-resources.py, which nothing
+# ever ran — a check is only worth having where it runs by itself.
+echo "==> Checking bundled resources"
+BUNDLED_RESOURCES="$BUILT_APP/Contents/Resources"
+
+if [[ ! -s "$BUNDLED_RESOURCES/Themes.json" ]]; then
+    echo "error: Themes.json is missing from $BUNDLED_RESOURCES" >&2
+    echo "       check the Resources/Themes.json entry in project.yml, then 'make project'" >&2
+    exit 1
+fi
+
+if [[ ! -f "$BUILT_APP/Contents/Info.plist" ]]; then
+    echo "error: no Info.plist in $BUILT_APP/Contents (INFOPLIST_FILE is not set right)" >&2
+    exit 1
+fi
+
+if [[ -e "$BUNDLED_RESOURCES/Info.plist" ]]; then
+    echo "error: Info.plist was copied into Resources/ as well as Contents/" >&2
+    echo "       it must only be generated, never listed in a resources phase" >&2
+    exit 1
+fi
+
 echo "==> Copying to $DIST_APP"
 rm -rf "$DIST_APP"
 /usr/bin/ditto "$BUILT_APP" "$DIST_APP"

@@ -198,8 +198,11 @@ final class Settings: ObservableObject {
 
     // MARK: - Derived
 
+    /// The selected theme, resolved against the bundled catalog *and* the
+    /// schemes the user imported, falling back to the default theme when the
+    /// identifier points at a theme whose file has since been removed.
     var theme: TerminalTheme {
-        TerminalTheme.theme(id: themeID)
+        ThemeLibrary.shared.theme(id: themeID)
     }
 
     /// The `NSFont` handed to SwiftTerm.
@@ -295,6 +298,14 @@ final class Settings: ObservableObject {
         self.launchAtLogin = Self.isLaunchAtLoginEnabled
 
         isLoading = false
+
+        // A theme can change without `themeID` changing (an imported file
+        // replaced by an updated copy) and can disappear entirely (its file
+        // moved to the Trash), so repaints follow the library rather than the
+        // identifier alone.
+        ThemeLibrary.shared.onChange = { [weak self] in
+            self?.onAppearanceChange?()
+        }
     }
 
     private func persist() {

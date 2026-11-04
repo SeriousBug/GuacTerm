@@ -3,13 +3,10 @@ import SwiftTerm
 
 /// A color scheme: window background, default text, cursor and the 16 ANSI
 /// colors programs actually ask for.
-struct TerminalTheme: Identifiable, Hashable, Sendable {
+struct TerminalTheme: Identifiable, Hashable, Sendable, NamedTheme {
 
     let id: String
     let name: String
-
-    /// Light themes get a light window border and a dark cursor.
-    let isLight: Bool
 
     let background: String
     let foreground: String
@@ -17,6 +14,14 @@ struct TerminalTheme: Identifiable, Hashable, Sendable {
 
     /// Exactly 16 hex colors, ANSI 0-15.
     let ansi: [String]
+
+    /// Light themes get a light window border and a dark cursor.
+    ///
+    /// Derived rather than stored: the same scheme has to be judged the same way
+    /// whether it was imported from a file or read out of the bundled catalog,
+    /// and the only way to guarantee that is to keep one rule in one place. See
+    /// ``isLight(background:)``.
+    var isLight: Bool { Self.isLight(background: background) }
 
     // MARK: - Colors
 
@@ -30,15 +35,54 @@ struct TerminalTheme: Identifiable, Hashable, Sendable {
         nsAnsi.map { SwiftTerm.Color(nsColor: $0) }
     }
 
+    // MARK: - Judging colors
+
+    /// True for `#RRGGBB` with exactly six hex digits (a leading `#` is
+    /// optional, since a hand-edited file may leave it off).
+    static func isHexColor(_ text: String) -> Bool {
+        rgbComponents(text) != nil
+    }
+
+    /// A background this bright wants dark text, so the window gets a light
+    /// chrome: WCAG relative luminance above 0.5.
+    static func isLight(background hex: String) -> Bool {
+        relativeLuminance(of: hex) > 0.5
+    }
+
+    /// `#RRGGBB` -> (red, green, blue) as 0...255, or nil when malformed.
+    private static func rgbComponents(_ text: String) -> (Int, Int, Int)? {
+        var digits = Substring(text.trimmingCharacters(in: .whitespacesAndNewlines))
+        if digits.first == "#" { digits = digits.dropFirst() }
+        guard digits.count == 6, let value = UInt32(digits, radix: 16) else { return nil }
+        return (
+            Int((value >> 16) & 0xFF),
+            Int((value >> 8) & 0xFF),
+            Int(value & 0xFF)
+        )
+    }
+
+    /// WCAG relative luminance, 0 (black) ... 1 (white).
+    private static func relativeLuminance(of hex: String) -> Double {
+        guard let (red, green, blue) = rgbComponents(hex) else { return 0 }
+        return 0.2126 * linearComponent(red)
+            + 0.7152 * linearComponent(green)
+            + 0.0722 * linearComponent(blue)
+    }
+
+    /// Undoes the sRGB transfer function for one 0...255 channel.
+    private static func linearComponent(_ value: Int) -> Double {
+        let channel = Double(value) / 255
+        return channel <= 0.04045
+            ? channel / 12.92
+            : pow((channel + 0.055) / 1.055, 2.4)
+    }
+
     // MARK: - Catalog access
 
     /// The theme used when nothing is configured, and the fallback for an
-    /// identifier written by an older version.
+    /// identifier written by an older version, or for an imported theme whose
+    /// file has since been removed.
     static let defaultThemeID = "guac"
-
-    static func theme(id: String) -> TerminalTheme {
-        catalog.first { $0.id == id } ?? catalog[0]
-    }
 }
 
 extension NSColor {

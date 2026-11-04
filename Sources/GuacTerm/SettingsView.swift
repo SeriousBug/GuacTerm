@@ -9,6 +9,7 @@ import SwiftUI
 struct SettingsView: View {
 
     @ObservedObject var settings: Settings
+    @ObservedObject var library: ThemeLibrary
 
     /// Opens the theme sheet as soon as the pane appears, so the picker can be
     /// reached from the `--theme-picker` launch flag (and from screenshots).
@@ -45,7 +46,7 @@ struct SettingsView: View {
             if showsThemePickerOnAppear { showingThemePicker = true }
         }
         .sheet(isPresented: $showingThemePicker) {
-            ThemePicker(settings: settings)
+            ThemePicker(settings: settings, library: library)
         }
     }
 
@@ -182,7 +183,8 @@ struct SettingsView: View {
     }
 
     /// The catalog holds ~890 schemes, so the menu is only ever a button: the
-    /// list itself lives in the ``ThemePicker`` sheet.
+    /// list itself lives in the ``ThemePicker`` sheet, which is also where a
+    /// theme is imported from a `.itermcolors` file.
     private var themeRow: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 16) {
@@ -199,13 +201,13 @@ struct SettingsView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
-                .help("Browse all \(TerminalTheme.catalog.count) themes")
+                .help("Browse all \(library.all.count) themes, or import your own")
             }
 
             ThemePreview(theme: settings.theme)
                 .contentShape(Rectangle())
                 .onTapGesture { showingThemePicker = true }
-                .help("Browse all \(TerminalTheme.catalog.count) themes")
+                .help("Browse all \(library.all.count) themes, or import your own")
         }
         .padding(.vertical, 11)
         .frame(maxWidth: .infinity, alignment: .leading)

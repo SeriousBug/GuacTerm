@@ -18,6 +18,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         let hosting = NSHostingController(
             rootView: SettingsView(
                 settings: settings,
+                library: ThemeLibrary.shared,
                 showsThemePickerOnAppear: showsThemePickerOnAppear
             )
         )

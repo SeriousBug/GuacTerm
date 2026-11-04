@@ -1,4 +1,5 @@
 import AppKit
+import UniformTypeIdentifiers
 
 /// Wires together the pieces: menu bar item, global shortcut, the drop-down
 /// terminal and the settings window.
@@ -6,11 +7,16 @@ import AppKit
 final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private let settings = Settings.shared
+    private let themes = ThemeLibrary.shared
     private let hotKey = GlobalHotKey()
 
     private var terminal: TerminalController!
     private var settingsWindowController: SettingsWindowController?
     private var statusItem: NSStatusItem?
+
+    /// Set when a theme was imported from a file opened with the app before
+    /// launch finished, when there was no window to show it in yet.
+    private var opensSettingsAfterLaunch = false
 
     // MARK: - Launch
 
@@ -52,6 +58,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self.terminal.show()
             }
         }
+
+        if opensSettingsAfterLaunch {
+            opensSettingsAfterLaunch = false
+            openSettings()
+        }
     }
 
     func applicationWillTerminate(_ notification: Notification) {
@@ -79,6 +90,66 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             .applicationVersion: AppInfo.version,
             .version: AppInfo.build
         ])
+    }
+
+    // MARK: - Importing themes
+
+    /// Import from the menu bar, for a theme that is not going to be dragged
+    /// onto the picker.
+    @objc private func importTheme() {
+        let panel = NSOpenPanel()
+        panel.title = "Import iTerm2 Theme"
+        panel.prompt = "Import"
+        panel.message = "Choose one or more .\(ITermColors.pathExtension) files."
+        panel.allowsMultipleSelection = true
+        panel.canChooseDirectories = false
+        panel.canChooseFiles = true
+        panel.allowedContentTypes = [
+            UTType(filenameExtension: ITermColors.pathExtension) ?? .data
+        ]
+
+        NSApp.activate()
+        guard panel.runModal() == .OK else { return }
+        importThemes(from: panel.urls)
+    }
+
+    /// A `.itermcolors` file opened with GuacTerm, from the Finder or with
+    /// `open -a GuacTerm scheme.itermcolors`. This is why the bundle declares the
+    /// type (see project.yml) — double-clicking a scheme is the shortest path
+    /// there is.
+    func application(_ application: NSApplication, open urls: [URL]) {
+        importThemes(from: urls)
+    }
+
+    private func importThemes(from urls: [URL]) {
+        let summary = themes.importThemes(from: urls)
+        if let id = summary.firstImportedID {
+            settings.themeID = id
+        }
+
+        guard !summary.failures.isEmpty else {
+            // Show the pane so the new theme is visible where it was imported
+            // to. When a file arrives before launch has finished there is no
+            // terminal to show it against yet, so the window opens at the end of
+            // `applicationDidFinishLaunching` instead.
+            if summary.firstImportedID != nil {
+                if terminal == nil {
+                    opensSettingsAfterLaunch = true
+                } else {
+                    openSettings()
+                }
+            }
+            return
+        }
+
+        let alert = NSAlert()
+        alert.messageText = summary.importedNames.isEmpty
+            ? "Could not import the theme"
+            : "Some themes were not imported"
+        alert.informativeText = summary.message
+        alert.alertStyle = .warning
+        NSApp.activate()
+        alert.runModal()
     }
 
     @objc private func openSettings() {
@@ -179,6 +250,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             )
         )
         menu.addItem(.separator())
+        menu.addItem(item(titled: "Import Theme…", action: #selector(importTheme), keyEquivalent: ""))
         menu.addItem(item(titled: "Settings…", action: #selector(openSettings), keyEquivalent: ","))
         menu.addItem(.separator())
         menu.addItem(item(titled: "Quit \(AppInfo.name)", action: #selector(quit), keyEquivalent: "q"))

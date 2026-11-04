@@ -10,13 +10,21 @@
 //  immediately — the terminal behind the sheet recolors as you browse — and
 //  Cancel puts the original theme back.
 //
+//  It is also where themes are imported: any `.itermcolors` file can be dropped
+//  on the sheet or picked with the Import button, which copies it into the
+//  user's library (see ThemeLibrary) and selects it. Imported schemes are listed
+//  above the bundled ones, because they are the ones that just arrived.
+//
 
+import AppKit
 import SwiftUI
+import UniformTypeIdentifiers
 
-/// A searchable, live-applying list of every ``TerminalTheme`` in the catalog.
+/// A searchable, live-applying list of every ``TerminalTheme`` the user has.
 struct ThemePicker: View {
 
     @ObservedObject var settings: Settings
+    @ObservedObject var library: ThemeLibrary
 
     @Environment(\.dismiss) private var dismiss
 
@@ -28,11 +36,20 @@ struct ThemePicker: View {
     @State private var query = ""
     @State private var hoveredThemeID: String?
 
+    /// What the last import did, shown in the footer. Sticky rather than a
+    /// transient toast: a failed file has to stay readable while the user goes
+    /// to look at it.
+    @State private var notice: ThemeLibrary.ImportSummary?
+
+    /// True while `.itermcolors` files are being dragged over the sheet.
+    @State private var isDropTarget = false
+
     private static let width: CGFloat = 560
     private static let height: CGFloat = 580
 
-    init(settings: Settings) {
+    init(settings: Settings, library: ThemeLibrary) {
         self.settings = settings
+        self.library = library
         self.originalThemeID = settings.themeID
     }
 
@@ -48,13 +65,24 @@ struct ThemePicker: View {
         }
         .frame(width: Self.width, height: Self.height)
         .onExitCommand(perform: cancel)
+        .dropDestination(for: URL.self) { urls, _ in
+            apply(urls)
+            return true
+        } isTargeted: { targeted in
+            isDropTarget = targeted
+        }
+        .overlay {
+            if isDropTarget {
+                dropTargetOverlay
+            }
+        }
     }
 
     // MARK: - Header
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .firstTextBaseline) {
+            HStack(alignment: .center, spacing: 10) {
                 Text("Themes")
                     .font(.title2.weight(.semibold))
                 Spacer()
@@ -62,6 +90,13 @@ struct ThemePicker: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
+                Button {
+                    importWithOpenPanel()
+                } label: {
+                    Label("Import…", systemImage: "square.and.arrow.down")
+                }
+                .controlSize(.small)
+                .help("Import an iTerm2 colour scheme (.itermcolors)")
             }
             searchField
         }
@@ -76,7 +111,7 @@ struct ThemePicker: View {
                 .foregroundStyle(.secondary)
 
             TextField(
-                "Search \(TerminalTheme.catalog.count) themes",
+                "Search \(library.all.count) themes",
                 text: $query
             )
             .textFieldStyle(.plain)
@@ -108,7 +143,7 @@ struct ThemePicker: View {
 
     private var countDescription: String {
         let shown = matches.count
-        let total = TerminalTheme.catalog.count
+        let total = library.all.count
         return shown == total ? "\(total) themes" : "\(shown) of \(total)"
     }
 
@@ -121,8 +156,19 @@ struct ThemePicker: View {
                     if matches.isEmpty {
                         emptyState
                     } else {
-                        ForEach(matches) { theme in
-                            row(theme)
+                        if !importedMatches.isEmpty {
+                            sectionHeader("Imported", detail: "right-click to manage")
+                            ForEach(importedMatches) { theme in
+                                row(theme)
+                            }
+                        }
+                        if !bundledMatches.isEmpty {
+                            if !importedMatches.isEmpty {
+                                sectionHeader("Bundled", detail: nil)
+                            }
+                            ForEach(bundledMatches) { theme in
+                                row(theme)
+                            }
                         }
                     }
                 }
@@ -138,7 +184,43 @@ struct ThemePicker: View {
         }
     }
 
+    private func sectionHeader(_ title: String, detail: String?) -> some View {
+        HStack(spacing: 6) {
+            Text(title.uppercased())
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.secondary)
+            if let detail {
+                Text(detail)
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 8)
+        .padding(.top, 10)
+        .padding(.bottom, 2)
+    }
+
+    /// An imported scheme gets a context menu; a bundled one has nothing to
+    /// manage, and an empty menu is worse than none.
+    @ViewBuilder
     private func row(_ theme: TerminalTheme) -> some View {
+        if library.isImported(theme) {
+            rowBody(theme)
+                .contextMenu {
+                    Button("Show in Finder") {
+                        library.reveal(theme)
+                    }
+                    Button("Remove Theme") {
+                        remove(theme)
+                    }
+                }
+        } else {
+            rowBody(theme)
+        }
+    }
+
+    private func rowBody(_ theme: TerminalTheme) -> some View {
         let isCurrent = theme.id == settings.themeID
         let isHovered = theme.id == hoveredThemeID
 
@@ -153,6 +235,13 @@ struct ThemePicker: View {
                     .truncationMode(.middle)
                     .fontWeight(isCurrent ? .semibold : .regular)
                     .foregroundStyle(isCurrent ? Color.accentColor : Color.primary)
+
+                if library.isImported(theme) {
+                    Image(systemName: "square.and.arrow.down")
+                        .font(.system(size: 9, weight: .semibold))
+                        .foregroundStyle(.tertiary)
+                        .help("Imported from \(library.fileURL(for: theme)?.lastPathComponent ?? "a file")")
+                }
 
                 Spacer(minLength: 8)
 
@@ -201,11 +290,33 @@ struct ThemePicker: View {
         .padding(.vertical, 44)
     }
 
+    /// Shown while files are dragged over the sheet, so the drop does not have
+    /// to be taken on faith.
+    private var dropTargetOverlay: some View {
+        RoundedRectangle(cornerRadius: 10, style: .continuous)
+            .strokeBorder(
+                Color.accentColor,
+                style: StrokeStyle(lineWidth: 2, dash: [6, 4])
+            )
+            .background(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(Color.accentColor.opacity(0.08))
+            )
+            .overlay {
+                Label("Drop to import", systemImage: "square.and.arrow.down")
+                    .font(.callout.weight(.medium))
+            }
+            .padding(8)
+            .allowsHitTesting(false)
+    }
+
     // MARK: - Footer
 
     private var footer: some View {
         VStack(alignment: .leading, spacing: 12) {
             ThemeSample(theme: settings.theme)
+
+            noticeLine
 
             HStack(spacing: 10) {
                 Text(settings.theme.name)
@@ -215,9 +326,20 @@ struct ThemePicker: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
+                if library.isImported(settings.theme) {
+                    Text("Imported")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
 
                 Spacer()
 
+                if library.isImported(settings.theme) {
+                    Button("Remove") {
+                        remove(settings.theme)
+                    }
+                    .help("Move the scheme's file from ~/Library/Application Support/GuacTerm/Themes to the Trash")
+                }
                 Button("Cancel", action: cancel)
                     .keyboardShortcut(.cancelAction)
                 Button("Done") {
@@ -232,20 +354,40 @@ struct ThemePicker: View {
         .padding(.bottom, 20)
     }
 
+    /// What the last import did, or how to do one. Keeping the hint here is how
+    /// the drop target is discoverable without a toolbar or a help window.
+    @ViewBuilder
+    private var noticeLine: some View {
+        if let notice, !notice.isEmpty {
+            let failed = !notice.failures.isEmpty
+            Label(notice.message, systemImage: failed ? "exclamationmark.triangle.fill" : "checkmark.circle")
+                .font(.caption)
+                .foregroundStyle(failed ? Color.orange : Color.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        } else {
+            Text("Drop .\(ITermColors.pathExtension) files here to import a theme.")
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+        }
+    }
+
     // MARK: - Data
 
     /// Every scheme whose name or identifier contains all the words typed, so
     /// "nord light" narrows instead of widening the result.
     private var matches: [TerminalTheme] {
         let needle = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        guard !needle.isEmpty else { return TerminalTheme.catalog }
+        guard !needle.isEmpty else { return library.all }
 
         let words = needle.split(separator: " ").map(String.init)
-        return TerminalTheme.catalog.filter { theme in
+        return library.all.filter { theme in
             let haystack = "\(theme.name) \(theme.id)".lowercased()
             return words.allSatisfy(haystack.contains)
         }
     }
+
+    private var importedMatches: [TerminalTheme] { matches.filter(library.isImported) }
+    private var bundledMatches: [TerminalTheme] { matches.filter { !library.isImported($0) } }
 
     // MARK: - Actions
 
@@ -260,6 +402,44 @@ struct ThemePicker: View {
             settings.themeID = originalThemeID
         }
         dismiss()
+    }
+
+    private func importWithOpenPanel() {
+        let panel = NSOpenPanel()
+        panel.title = "Import iTerm2 Theme"
+        panel.prompt = "Import"
+        panel.message = "Choose one or more .\(ITermColors.pathExtension) files."
+        panel.allowsMultipleSelection = true
+        panel.canChooseDirectories = false
+        panel.canChooseFiles = true
+        // The declared type, or a dynamic type carrying the same extension tag:
+        // either way the panel filters on `.itermcolors` rather than on every
+        // file on disk.
+        panel.allowedContentTypes = [
+            UTType(filenameExtension: ITermColors.pathExtension) ?? .data
+        ]
+
+        guard panel.runModal() == .OK else { return }
+        apply(panel.urls)
+    }
+
+    /// Imports the files and shows what happened, selecting the first scheme
+    /// that made it in so the import is visible without hunting for it.
+    private func apply(_ urls: [URL]) {
+        let summary = library.importThemes(from: urls)
+        if summary.isEmpty { return }
+        notice = summary
+        if let id = summary.firstImportedID {
+            settings.themeID = id
+        }
+    }
+
+    private func remove(_ theme: TerminalTheme) {
+        guard library.remove(theme) else { return }
+        notice = nil
+        if settings.themeID == theme.id {
+            settings.themeID = TerminalTheme.defaultThemeID
+        }
     }
 }
 
