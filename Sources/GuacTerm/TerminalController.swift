@@ -417,13 +417,14 @@ final class TerminalController: NSObject {
     private func startShell() {
         guard let terminalView else { return }
         let launch = settings.shellLaunch
+        let environment = ShellEnvironment.make(shell: launch.announcedShell)
 
         switch launch {
         case let .program(program):
             terminalView.startProcess(
                 executable: program,
                 args: [],
-                environment: ShellEnvironment.make(shell: program),
+                environment: environment,
                 execName: Self.loginName(for: program),
                 currentDirectory: NSHomeDirectory()
             )
@@ -434,7 +435,7 @@ final class TerminalController: NSObject {
             terminalView.startProcess(
                 executable: shell,
                 args: ["-c", line],
-                environment: ShellEnvironment.make(shell: shell),
+                environment: environment,
                 execName: Self.loginName(for: shell),
                 currentDirectory: NSHomeDirectory()
             )

@@ -169,6 +169,34 @@ final class ShellLaunchTests: XCTestCase {
         XCTAssertNil(Settings.resolveExecutable(notExecutable.path))
     }
 
+    // MARK: - What `$SHELL` says inside the session
+
+    /// A shell that was launched is the shell the session is running, so
+    /// `$SHELL` names it — that is what its own startup files read.
+    func testALaunchedShellAnnouncesItself() {
+        for program in ["/bin/zsh", "/opt/homebrew/bin/fish", "/opt/homebrew/bin/nu"] {
+            XCTAssertEqual(ShellLaunch.program(program).announcedShell, program)
+        }
+    }
+
+    /// A multiplexer is not the user's shell, and saying it is makes it start
+    /// itself in every new pane, since that is what it reads `$SHELL` for. The
+    /// session keeps the account's login shell instead, and the login shell in
+    /// the user database is never touched by any of this.
+    func testAMultiplexerLeavesTheShellVariableToTheLoginShell() {
+        for program in ["/opt/homebrew/bin/zellij", "/opt/homebrew/bin/tmux"] {
+            XCTAssertEqual(ShellLaunch.program(program).announcedShell, Settings.accountLoginShell)
+        }
+    }
+
+    /// A command line is already run by the account's login shell, which is what
+    /// `$SHELL` then names — not the program the line happens to start.
+    func testACommandLineAnnouncesTheShellThatRunsIt() {
+        let launch = ShellLaunch.command(shell: "/bin/zsh", line: "zellij attach || zellij")
+
+        XCTAssertEqual(launch.announcedShell, "/bin/zsh")
+    }
+
     // MARK: - Warning about a mistyped program
 
     /// A single mistyped word is worth a note next to the field: the panel would

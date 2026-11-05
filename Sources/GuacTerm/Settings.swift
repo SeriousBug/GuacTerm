@@ -15,6 +15,22 @@ enum ShellLaunch: Equatable, Sendable {
     /// A command line handed to the account's login shell with `-c`, e.g.
     /// `zellij attach || zellij`.
     case command(shell: String, line: String)
+
+    /// What `$SHELL` names inside the session.
+    ///
+    /// That is the shell that is running, not the program that was launched:
+    /// a multiplexer reads `$SHELL` to decide what to start in a new pane or
+    /// window, so calling zellij the user's shell makes zellij start zellij.
+    /// This only ever reaches the child process; the account's own login shell
+    /// in the user database is never touched.
+    var announcedShell: String {
+        switch self {
+        case let .program(program):
+            Settings.isShell(program) ? program : Settings.accountLoginShell
+        case let .command(shell, _):
+            shell
+        }
+    }
 }
 
 /// Everything the user can change, persisted in `UserDefaults`.
@@ -451,103 +467,6 @@ final class Settings: ObservableObject {
             NSLog("[GuacTerm] launch at login failed: \(error.localizedDescription)")
             launchAtLogin = Self.isLaunchAtLoginEnabled
         }
-    }
-
-    // MARK: - System discovery
-
-    static var accountLoginShell: String {
-        if let entry = getpwuid(getuid()), let raw = entry.pointee.pw_shell {
-            let shell = String(cString: raw)
-            if !shell.isEmpty, FileManager.default.isExecutableFile(atPath: shell) {
-                return shell
-            }
-        }
-        if let shell = ProcessInfo.processInfo.environment["SHELL"],
-           FileManager.default.isExecutableFile(atPath: shell)
-        {
-            return shell
-        }
-        return "/bin/zsh"
-    }
-
-    /// Turns whatever the user typed into an absolute path to a program, or
-    /// `nil` if it is not one.
-    ///
-    /// Typing is the way to pick a shell here: `zsh` or `zellij` is faster than
-    /// hunting for `/opt/homebrew/bin/zellij` in a file panel, and multiplexers
-    /// are exactly the kind of thing GuacTerm expects people to run. A bare name
-    /// is looked up in `PATH` and in the usual install locations, because an app
-    /// launched from Finder inherits a very short `PATH`.
-    static func resolveExecutable(_ raw: String) -> String? {
-        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return nil }
-
-        let expanded = (trimmed as NSString).expandingTildeInPath
-        if expanded.contains("/") {
-            return isExecutableFile(expanded) ? expanded : nil
-        }
-
-        for directory in executableSearchDirectories {
-            let candidate = (directory as NSString).appendingPathComponent(expanded)
-            if isExecutableFile(candidate) {
-                return candidate
-            }
-        }
-        return nil
-    }
-
-    /// `isExecutableFile` alone is true for directories, which is not something
-    /// that can be launched.
-    private static func isExecutableFile(_ path: String) -> Bool {
-        var isDirectory: ObjCBool = false
-        guard FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory),
-              !isDirectory.boolValue
-        else { return false }
-        return FileManager.default.isExecutableFile(atPath: path)
-    }
-
-    /// Where a bare command name is searched for: the app's own `PATH` first,
-    /// then Homebrew, MacPorts and the system directories.
-    private static var executableSearchDirectories: [String] {
-        var directories: [String] = []
-        if let path = ProcessInfo.processInfo.environment["PATH"] {
-            directories += path.split(separator: ":").map(String.init)
-        }
-        directories += [
-            "/opt/homebrew/bin",
-            "/opt/homebrew/sbin",
-            "/usr/local/bin",
-            "/usr/bin",
-            "/bin",
-        ]
-
-        var seen = Set<String>()
-        return directories.filter { !$0.isEmpty && seen.insert($0).inserted }
-    }
-
-    /// Programs offered in the Shell menu: every login shell macOS knows about,
-    /// plus the shells and multiplexers GuacTerm expects people to run inside it
-    /// (the modern shells are rarely listed in `/etc/shells`).
-    ///
-    /// Anything that is not actually installed is dropped, so the menu never
-    /// offers a path that would fail to launch.
-    static var availableShells: [String] {
-        var candidates: [String] = [accountLoginShell]
-
-        if let contents = try? String(contentsOfFile: "/etc/shells", encoding: .utf8) {
-            candidates += contents
-                .split(separator: "\n")
-                .map { $0.trimmingCharacters(in: .whitespaces) }
-                .filter { !$0.isEmpty && !$0.hasPrefix("#") }
-        }
-
-        // Resolved against `PATH`, so this covers Homebrew on Apple silicon
-        // (`/opt/homebrew/bin`) as well as Intel and manual installs. A name that
-        // is not installed never appears.
-        candidates += ["fish", "nu", "tmux", "zellij"].compactMap(resolveExecutable)
-
-        var seen = Set<String>()
-        return candidates.compactMap(resolveExecutable).filter { seen.insert($0).inserted }
     }
 
     static var defaultFontName: String {

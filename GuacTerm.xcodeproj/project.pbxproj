@@ -23,6 +23,7 @@
 		5357BAAB08D72AAA5CD9674F /* PanelGeometryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9AF9AB0574E78B3683BD35A /* PanelGeometryTests.swift */; };
 		56981A6B6422FACAAD7687DD /* GuacTerminalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43F8599F367924B343524BCC /* GuacTerminalView.swift */; };
 		57015FB0CBE1B7191F5F4DD3 /* ShellEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4084FDD3A9DCBD151BEB1ED2 /* ShellEnvironment.swift */; };
+		57525D813F7E4EAC326D3C6F /* Settings+Shells.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E0BCE1F239BAE47C3721FA5 /* Settings+Shells.swift */; };
 		5A2B83C08C94BE9C52454B87 /* Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66EBE5BD5F4A31637E422657 /* Settings.swift */; };
 		5CE44A5036C7250744FDBB5F /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BFF5BD7CD25C9E2497C3C2B /* SettingsView.swift */; };
 		6504FC56E417B6F8F4250763 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 406C4EC712562B5C4A91A24D /* main.swift */; };
@@ -77,6 +78,7 @@
 		3B40F1C7C0FEE6007A017955 /* AppWiringTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppWiringTests.swift; sourceTree = "<group>"; };
 		3B81AC81601CCD3505482D07 /* AboutContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutContent.swift; sourceTree = "<group>"; };
 		3BFF5BD7CD25C9E2497C3C2B /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		3E0BCE1F239BAE47C3721FA5 /* Settings+Shells.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Settings+Shells.swift"; sourceTree = "<group>"; };
 		406C4EC712562B5C4A91A24D /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		4084FDD3A9DCBD151BEB1ED2 /* ShellEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellEnvironment.swift; sourceTree = "<group>"; };
 		408FFC42EE3DE24CA60C0FAA /* TerminalThemeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalThemeTests.swift; sourceTree = "<group>"; };
@@ -161,6 +163,7 @@
 				26377213A47F72554A0B00A9 /* KeyCombo.swift */,
 				406C4EC712562B5C4A91A24D /* main.swift */,
 				66EBE5BD5F4A31637E422657 /* Settings.swift */,
+				3E0BCE1F239BAE47C3721FA5 /* Settings+Shells.swift */,
 				961231E6B190C1C832C449B4 /* SettingsRow.swift */,
 				3BFF5BD7CD25C9E2497C3C2B /* SettingsView.swift */,
 				ECE8FCE2E4F981FE9CD133A5 /* SettingsWindowController.swift */,
@@ -381,6 +384,7 @@
 				56981A6B6422FACAAD7687DD /* GuacTerminalView.swift in Sources */,
 				473465999322E4C1B9FAD888 /* ITermColors.swift in Sources */,
 				3D977891FCB85E3FD03B87F0 /* KeyCombo.swift in Sources */,
+				57525D813F7E4EAC326D3C6F /* Settings+Shells.swift in Sources */,
 				5A2B83C08C94BE9C52454B87 /* Settings.swift in Sources */,
 				7BFDCC159F8D4BDBB1F6D82D /* SettingsRow.swift in Sources */,
 				5CE44A5036C7250744FDBB5F /* SettingsView.swift in Sources */,

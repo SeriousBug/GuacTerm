@@ -29,6 +29,8 @@ final class ShellEnvironmentTests: XCTestCase {
     /// `$SHELL` is what the shell's own startup files and every script they call
     /// read to decide which shell they are running in, so it has to be the
     /// program that was actually started, not whatever this process inherited.
+    /// Which program that is for a given setting is
+    /// ``ShellLaunch/announcedShell``'s business.
     func testTheShellSettingIsWhatTheShellSeesAsItself() {
         XCTAssertEqual(environment(shell: "/bin/zsh")["SHELL"], "/bin/zsh")
         XCTAssertEqual(environment(shell: "zsh")["SHELL"], "zsh")

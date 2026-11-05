@@ -466,4 +466,42 @@ final class SettingsTests: XCTestCase {
             "termux cannot run on macOS"
         )
     }
+
+    /// A multiplexer is not a shell. The menu offers `tmux` and `zellij` beside
+    /// the shells, and the difference is what `$SHELL` has to say: a multiplexer
+    /// reads it to decide what to start in a new pane.
+    func testMultiplexersAreNotShells() {
+        for program in ["zellij", "/opt/homebrew/bin/zellij", "tmux", "/opt/homebrew/bin/tmux", "screen"] {
+            XCTAssertFalse(Settings.isShell(program), "\(program) is not a shell")
+        }
+    }
+
+    /// Every shell macOS lists, and the ones people install on top of it, are
+    /// recognised whether they are written as a name or as a path.
+    func testShellsAreRecognisedByNameAndByPath() {
+        for program in [
+            "/bin/zsh",
+            "/bin/bash",
+            "/bin/sh",
+            "/bin/dash",
+            "/bin/csh",
+            "/bin/tcsh",
+            "/bin/ksh",
+            "/opt/homebrew/bin/fish",
+            "/opt/homebrew/bin/nu",
+            "/opt/homebrew/bin/xonsh",
+            "/opt/homebrew/bin/pwsh",
+            "zsh",
+            "fish",
+        ] {
+            XCTAssertTrue(Settings.isShell(program), "\(program) is a shell")
+        }
+    }
+
+    /// The account's login shell is always recognised, whatever it is called:
+    /// an exotic one that matches no naming pattern has to be found in
+    /// `/etc/shells` rather than be mistaken for a multiplexer.
+    func testTheAccountLoginShellIsAlwaysAShell() {
+        XCTAssertTrue(Settings.isShell(Settings.accountLoginShell))
+    }
 }

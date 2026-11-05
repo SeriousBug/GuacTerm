@@ -15,7 +15,7 @@ For stuff like tabs, you can always use tmux or zellij.
 
 ## Install
 
-Download `GuacTerm.<version>.dmg` from the downloads page.
+Download `GuacTerm-<version>.dmg` from the [latest GitHub release](https://github.com/SeriousBug/GuacTerm/releases/latest).
 
 ## Development
 

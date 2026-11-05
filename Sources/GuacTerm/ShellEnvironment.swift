@@ -15,6 +15,9 @@ enum ShellEnvironment {
         environment["TERM_PROGRAM"] = AppInfo.name
         environment["TERM_PROGRAM_VERSION"] = AppInfo.version
         environment["TERM_SESSION_ID"] = UUID().uuidString
+        // The shell running in the session, not necessarily the program that was
+        // launched: see `ShellLaunch.announcedShell`. This is the child's
+        // environment only — GuacTerm never changes the account's login shell.
         environment["SHELL"] = shell
 
         let userName = NSUserName()
