@@ -70,11 +70,6 @@ final class ShortcutRecorderView: NSView {
         true
     }
 
-    override func becomeFirstResponder() -> Bool {
-        startRecording()
-        return true
-    }
-
     override func resignFirstResponder() -> Bool {
         stopRecording()
         return super.resignFirstResponder()
