@@ -90,7 +90,9 @@ final class TerminalController: NSObject {
         panel.isReleasedWhenClosed = false
         panel.animationBehavior = .none
         panel.isRestorable = false
-        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]
+        // The accessory app may have been activated on a different desktop;
+        // move the panel to the active one whenever it is shown.
+        panel.collectionBehavior = [.moveToActiveSpace, .fullScreenAuxiliary, .ignoresCycle]
         // A borderless window has no title bar, but the title still names the
         // window for accessibility and Mission Control.
         panel.title = AppInfo.name
