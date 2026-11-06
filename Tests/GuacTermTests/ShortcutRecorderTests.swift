@@ -11,18 +11,40 @@ import XCTest
 /// repeats, so it has to be readable.
 @MainActor
 final class ShortcutRecorderTests: XCTestCase {
+    private var windows: [NSWindow] = []
+
     /// A recorder with nothing listening for changes.
     private func makeRecorder(combo: KeyCombo = .default) -> ShortcutRecorderView {
         let view = ShortcutRecorderView(frame: NSRect(x: 0, y: 0, width: 132, height: 26))
         view.combo = combo
+        let window = NSWindow(
+            contentRect: view.frame,
+            styleMask: .borderless,
+            backing: .buffered,
+            defer: false
+        )
+        window.contentView?.addSubview(view)
+        windows.append(window)
         return view
     }
 
-    /// Puts the recorder into the state a click leaves it in, and checks the
-    /// click actually got there — a view that never starts recording would make
-    /// every test below pass for the wrong reason.
+    /// Starts recording through the same mouse path used by the button.
     private func startRecording(_ view: ShortcutRecorderView) {
-        XCTAssertTrue(view.becomeFirstResponder())
+        guard let window = view.window,
+              let event = NSEvent.mouseEvent(
+                  with: .leftMouseDown,
+                  location: NSPoint(x: view.bounds.midX, y: view.bounds.midY),
+                  modifierFlags: [],
+                  timestamp: ProcessInfo.processInfo.systemUptime,
+                  windowNumber: window.windowNumber,
+                  context: nil,
+                  eventNumber: 0,
+                  clickCount: 1,
+                  pressure: 1
+              ) else {
+            return XCTFail("no mouse event for shortcut recorder")
+        }
+        view.mouseDown(with: event)
         XCTAssertTrue(view.isRecording)
     }
 
@@ -44,6 +66,13 @@ final class ShortcutRecorderTests: XCTestCase {
     }
 
     // MARK: - Combinations that become the hotkey
+
+    func testBecomingFirstResponderAloneDoesNotStartRecording() {
+        let view = makeRecorder()
+
+        XCTAssertTrue(view.becomeFirstResponder())
+        XCTAssertFalse(view.isRecording)
+    }
 
     func testACommandShortcutIsRecordedReportedAndEndsRecording() {
         let view = makeRecorder()
