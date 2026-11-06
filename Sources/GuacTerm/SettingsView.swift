@@ -322,6 +322,8 @@ struct SettingsView: View {
         switch settings.shellLaunch {
         case .program:
             return "Restart for changes to take effect."
+        case .session:
+            return "Attaches to the \(Settings.sessionName) session, starting it if it is not running. Restart for changes to take effect."
         case let .command(shell, _):
             return "A command line, so \(shell) -c runs it. Restart for changes to take effect."
         }

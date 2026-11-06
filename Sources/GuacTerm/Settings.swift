@@ -6,11 +6,17 @@ import ServiceManagement
 /// The setting takes either a program or a whole command line, because the two
 /// are useful in different situations and telling them apart is easy: a single
 /// program can be launched directly, while `zellij attach || zellij` only means
-/// something to a shell.
+/// something to a shell. A multiplexer is a third case: it is a program, but one
+/// that is launched with the arguments that attach it to a session instead of
+/// starting a new one.
 enum ShellLaunch: Equatable, Sendable {
-    /// A program to exec, e.g. `/bin/zsh` or `/opt/homebrew/bin/zellij`. It is
+    /// A program to exec, e.g. `/bin/zsh` or `/opt/homebrew/bin/fish`. It is
     /// named as a login shell, so it reads the startup files Terminal.app would.
     case program(String)
+
+    /// A multiplexer launched so that it attaches to the session named
+    /// ``Settings/sessionName``, starting that session when it is not there yet.
+    case session(program: String, arguments: [String])
 
     /// A command line handed to the account's login shell with `-c`, e.g.
     /// `zellij attach || zellij`.
@@ -27,6 +33,8 @@ enum ShellLaunch: Equatable, Sendable {
         switch self {
         case let .program(program):
             Settings.isShell(program) ? program : Settings.accountLoginShell
+        case .session:
+            Settings.accountLoginShell
         case let .command(shell, _):
             shell
         }
@@ -80,7 +88,8 @@ final class Settings: ObservableObject {
     }
 
     /// Absolute path of the shell or command to launch, e.g. `/bin/zsh`,
-    /// `zellij`, or `zellij attach || zellij`. See ``shellLaunch``.
+    /// `zellij`, or `zellij attach || zellij`. A multiplexer named on its own is
+    /// started attached to ``sessionName``. See ``shellLaunch``.
     @Published var shellPath: String {
         didSet {
             persist()
@@ -269,6 +278,11 @@ final class Settings: ObservableObject {
     /// typed *is* a program — a bare name found in `PATH`, or a path — it is
     /// launched directly and named as a login shell.
     ///
+    /// A multiplexer keeps that treatment but is given the arguments that attach
+    /// it to ``sessionName``, so pulling the panel down comes back to the work
+    /// that was there rather than to a new empty session. Arguments in the field
+    /// are the user's own, so `tmux attach -t main` stays a command line.
+    ///
     /// Anything else is a command line, and there is no way to exec that: `||`,
     /// spaces between arguments and quoting all have to be interpreted. Those
     /// run through the account's login shell with `-c`, so `zellij attach ||
@@ -277,10 +291,13 @@ final class Settings: ObservableObject {
     var shellLaunch: ShellLaunch {
         let line = shellLine
         guard !line.isEmpty else { return .program(Self.accountLoginShell) }
-        if let program = Self.resolveExecutable(line) {
-            return .program(program)
+        guard let program = Self.resolveExecutable(line) else {
+            return .command(shell: Self.accountLoginShell, line: line)
         }
-        return .command(shell: Self.accountLoginShell, line: line)
+        if let arguments = Self.sessionArguments(for: program) {
+            return .session(program: program, arguments: arguments)
+        }
+        return .program(program)
     }
 
     /// True when the Shell field holds one bare word that is not an installed
@@ -330,7 +347,19 @@ final class Settings: ObservableObject {
         isLoading = true
 
         shortcut = Self.loadShortcut(defaults) ?? .default
-        shellPath = defaults.string(forKey: Key.shellPath.rawValue) ?? Self.accountLoginShell
+
+        // The shell is chosen once, on the very first launch, and then it is
+        // whatever the user left in the field: an empty field is a choice too,
+        // and a multiplexer installed last week must not quietly replace the
+        // shell someone has been using for months.
+        if let storedShell = defaults.string(forKey: Key.shellPath.rawValue) {
+            shellPath = storedShell
+        } else {
+            let firstRunShell = Self.firstLaunchShell
+            shellPath = firstRunShell
+            defaults.set(firstRunShell, forKey: Key.shellPath.rawValue)
+        }
+
         scrollbackLines = Self.loadedInt(
             defaults, .scrollbackLines, limits: Limits.scrollback, fallback: 10000
         )

@@ -133,6 +133,60 @@ final class ShellLaunchTests: XCTestCase {
         }
     }
 
+    // MARK: - Multiplexer sessions
+
+    /// A multiplexer is not launched as it is: it is told to attach to the
+    /// session GuacTerm keeps, and to start that session when it is not running.
+    /// Launched plainly, each pull-down would start a new empty session and leave
+    /// the work from the last one running where nothing reaches it.
+    ///
+    /// The names are made up here on purpose: what decides this is the name of
+    /// the program, not where this machine happens to have installed it.
+    func testAMultiplexerIsStartedAttachedToTheNamedSession() throws {
+        let directory = try TemporaryDirectory()
+        let zellij = try makeExecutableFile(named: "zellij", in: directory.url)
+        let tmux = try makeExecutableFile(named: "tmux", in: directory.url)
+
+        XCTAssertEqual(
+            try shellLaunchOf(zellij.path),
+            .session(program: zellij.path, arguments: ["attach", "--create", Settings.sessionName])
+        )
+        XCTAssertEqual(
+            try shellLaunchOf(tmux.path),
+            .session(program: tmux.path, arguments: ["new-session", "-A", "-s", Settings.sessionName])
+        )
+    }
+
+    /// Arguments in the field are the user's own line, not GuacTerm's: someone
+    /// who typed which session to attach to gets that session, verbatim, through
+    /// a shell that understands it.
+    func testAMultiplexerWithArgumentsOfItsOwnStaysACommandLine() throws {
+        for line in [
+            "tmux attach -t main",
+            "tmux new -s work",
+            "zellij attach main",
+            "zellij --session work",
+        ] {
+            XCTAssertEqual(
+                try shellLaunchOf(line),
+                .command(shell: Settings.accountLoginShell, line: line),
+                "for \(line.debugDescription)"
+            )
+        }
+    }
+
+    /// Attaching does not make a multiplexer a shell: `$SHELL` stays the account's
+    /// login shell, so a new pane or split starts the shell people expect rather
+    /// than another zellij inside this one.
+    func testAnAttachedSessionStillNamesTheLoginShell() {
+        let launch = ShellLaunch.session(
+            program: "/opt/homebrew/bin/zellij",
+            arguments: ["attach", "--create", Settings.sessionName]
+        )
+
+        XCTAssertEqual(launch.announcedShell, Settings.accountLoginShell)
+    }
+
     // MARK: - Resolving a program
 
     /// An empty field is not a program, so nothing is resolved from it.

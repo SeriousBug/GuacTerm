@@ -431,6 +431,19 @@ final class TerminalController: NSObject {
                 currentDirectory: NSHomeDirectory()
             )
 
+        case let .session(program, arguments):
+            // Attach to the session, or start it when it is not there: the
+            // arguments are the whole of that promise (see
+            // `Settings.sessionArguments(for:)`), so nothing is left for a shell
+            // to parse.
+            terminalView.startProcess(
+                executable: program,
+                args: arguments,
+                environment: environment,
+                execName: Self.loginName(for: program),
+                currentDirectory: NSHomeDirectory()
+            )
+
         case let .command(shell, line):
             // Only a shell can interpret a command line, so the account's own
             // login shell parses it and then `exec`s what it found.

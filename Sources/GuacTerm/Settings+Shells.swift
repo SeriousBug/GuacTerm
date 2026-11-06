@@ -50,6 +50,36 @@ extension Settings {
         return nil
     }
 
+    /// The session a multiplexer is attached to inside GuacTerm.
+    ///
+    /// One name for the whole app, because the app has one terminal: whatever
+    /// was running in it before the panel was hidden — or before GuacTerm was
+    /// quit — is what has to come back the next time.
+    nonisolated static let sessionName = "guacterm"
+
+    /// The arguments that make a multiplexer attach to ``sessionName``, or start
+    /// that session when it is not running yet, or `nil` when `program` is not a
+    /// multiplexer GuacTerm does this for.
+    ///
+    /// Both programs can be told "attach if it is there, create it if not" in a
+    /// single command, which is the whole reason they are handled rather than
+    /// exec'd as they are: launched plainly, each one starts a new empty session
+    /// every time and the work from the last one is left behind, still running
+    /// and no longer reachable from the panel.
+    nonisolated static func sessionArguments(for program: String) -> [String]? {
+        switch (program as NSString).lastPathComponent.lowercased() {
+        case "zellij":
+            // `zellij attach` fails on a session that is not there; `--create`
+            // is what turns it into "or start one".
+            ["attach", "--create", sessionName]
+        case "tmux":
+            // `-A` is the same promise for tmux, and it only counts with `-s`.
+            ["new-session", "-A", "-s", sessionName]
+        default:
+            nil
+        }
+    }
+
     /// True when a program is a shell rather than something that runs inside one.
     ///
     /// The Shell field takes multiplexers as readily as shells — the menu offers
@@ -106,6 +136,18 @@ extension Settings {
 
         var seen = Set<String>()
         return directories.filter { !$0.isEmpty && seen.insert($0).inserted }
+    }
+
+    /// What the Shell field is filled with the very first time GuacTerm runs:
+    /// zellij if it is installed, then tmux, then the account's login shell.
+    ///
+    /// Tabs and splits are what a multiplexer does better than GuacTerm ever
+    /// will, so a machine that already has one is started on it. The answer is
+    /// stored as an ordinary setting rather than worked out again on every
+    /// launch: installing a multiplexer later must not change a field the user
+    /// has already seen and left alone.
+    static var firstLaunchShell: String {
+        resolveExecutable("zellij") ?? resolveExecutable("tmux") ?? accountLoginShell
     }
 
     /// Programs offered in the Shell menu: every login shell macOS knows about,

@@ -39,8 +39,9 @@ final class SettingsTests: XCTestCase {
     }
 
     /// The first launch of the app: no window taller than asked for, no glass
-    /// darker than asked for, a readable 13pt grid and the shortcut people are
-    /// told about.
+    /// darker than asked for, a readable 13pt grid, the shortcut people are
+    /// told about, and — when one is installed — a multiplexer as the shell,
+    /// since tabs and splits are what people reach for tmux or zellij for.
     func testAFreshInstallStartsWithTheDocumentedDefaults() throws {
         let subject = try makeSettingsSubject()
         let settings = subject.settings
@@ -56,7 +57,7 @@ final class SettingsTests: XCTestCase {
         XCTAssertEqual(settings.lightThemeID, TerminalTheme.defaultLightThemeID)
         XCTAssertEqual(settings.shortcut, .default)
         XCTAssertEqual(settings.appearanceMode, .system)
-        XCTAssertEqual(settings.shellPath, Settings.accountLoginShell)
+        XCTAssertEqual(settings.shellPath, Settings.firstLaunchShell)
         XCTAssertEqual(settings.fontName, Settings.defaultFontName)
     }
 
@@ -109,7 +110,7 @@ final class SettingsTests: XCTestCase {
         XCTAssertEqual(settings.shortcut, .default)
         XCTAssertEqual(settings.scrollbackLines, 10000)
         XCTAssertEqual(settings.fontName, Settings.defaultFontName)
-        XCTAssertEqual(settings.shellPath, Settings.accountLoginShell)
+        XCTAssertEqual(settings.shellPath, Settings.firstLaunchShell)
     }
 
     /// A scrollback count stored as a fraction is not a count at all, so the
@@ -425,6 +426,49 @@ final class SettingsTests: XCTestCase {
         let font = settings.font
         XCTAssertEqual(font.pointSize, CGFloat(settings.fontSize))
         XCTAssertTrue(font.isFixedPitch)
+    }
+
+    /// Zellij, then tmux, then the account's login shell, and never anything that
+    /// cannot be launched: tabs and splits are what a multiplexer is for, so a
+    /// machine that has one starts on it.
+    func testTheFirstLaunchShellPrefersZellijThenTmuxThenTheLoginShell() {
+        let zellij = Settings.resolveExecutable("zellij")
+        let tmux = Settings.resolveExecutable("tmux")
+
+        if let zellij {
+            XCTAssertEqual(Settings.firstLaunchShell, zellij, "zellij is the first choice")
+        } else if let tmux {
+            XCTAssertEqual(Settings.firstLaunchShell, tmux, "tmux is the second choice")
+        } else {
+            XCTAssertEqual(Settings.firstLaunchShell, Settings.accountLoginShell)
+        }
+        XCTAssertTrue(FileManager.default.isExecutableFile(atPath: Settings.firstLaunchShell))
+    }
+
+    /// The multiplexer is picked on the very first launch and never again: the
+    /// answer goes into the domain, so every later launch reads a setting rather
+    /// than looking at what is installed. Installing zellij next month must not
+    /// replace a shell someone has been using for months.
+    func testTheShellChosenAtFirstLaunchIsStoredAndNotChosenAgain() throws {
+        let temp = try TemporaryDefaults()
+        let settings = Settings(defaults: temp.defaults)
+
+        XCTAssertEqual(settings.shellPath, Settings.firstLaunchShell)
+        XCTAssertEqual(temp.defaults.string(forKey: StoredKey.shellPath), Settings.firstLaunchShell)
+
+        settings.shellPath = "/bin/sh"
+        XCTAssertEqual(Settings(defaults: temp.defaults).shellPath, "/bin/sh")
+    }
+
+    /// An emptied field means "just the account's login shell", which is a choice
+    /// as much as any other: a relaunch must not fill the multiplexer back in.
+    func testAnEmptiedShellFieldStaysEmpty() throws {
+        let temp = try TemporaryDefaults()
+        Settings(defaults: temp.defaults).shellPath = ""
+
+        let relaunched = Settings(defaults: temp.defaults)
+        XCTAssertEqual(relaunched.shellPath, "")
+        XCTAssertEqual(relaunched.shellLaunch, .program(Settings.accountLoginShell))
     }
 
     /// The field is stored exactly as typed so a person can see what they wrote,
