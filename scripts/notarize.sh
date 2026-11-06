@@ -65,6 +65,10 @@ case "$IDENTITY" in
   rejected by the notary service." ;;
 esac
 
+IDENTITY_HASH="$(security find-identity -v -p codesigning 2>/dev/null \
+    | awk -v quoted_identity="\"$IDENTITY\"" 'index($0, quoted_identity) { print $2; exit }')"
+[[ -n "$IDENTITY_HASH" ]] || die "could not find a valid keychain identity matching '$IDENTITY'"
+
 # Team id: prefer explicit DEVELOPMENT_TEAM / TEAM_ID, else parse "(TEAMID)".
 TEAM_ID_RESOLVED="${DEVELOPMENT_TEAM:-${TEAM_ID:-}}"
 if [[ -z "$TEAM_ID_RESOLVED" ]]; then
@@ -119,6 +123,7 @@ xcodebuild \
     DEVELOPMENT_TEAM="$TEAM_ID_RESOLVED" \
     PROVISIONING_PROFILE_SPECIFIER="" \
     ENABLE_HARDENED_RUNTIME=YES \
+    CODE_SIGN_INJECT_BASE_ENTITLEMENTS=NO \
     ENABLE_APP_SANDBOX=NO \
     OTHER_CODE_SIGN_FLAGS="--timestamp" \
     build
@@ -130,12 +135,30 @@ echo "==> Copying to $DIST_APP"
 rm -rf "$DIST_APP"
 /usr/bin/ditto "$BUILT_APP" "$DIST_APP"
 
+# Sparkle's packaged helpers are ad-hoc signed. This custom build flow does not
+# perform Xcode's archive export signing pass, so sign the helpers before their
+# containing framework and app.
+SPARKLE_FRAMEWORK="$DIST_APP/Contents/Frameworks/Sparkle.framework"
+SPARKLE_VERSIONED="$SPARKLE_FRAMEWORK/Versions/Current"
+echo "==> Signing Sparkle helpers"
+codesign --force --sign "$IDENTITY_HASH" --options runtime --timestamp \
+    "$SPARKLE_VERSIONED/XPCServices/Installer.xpc"
+codesign --force --sign "$IDENTITY_HASH" --options runtime --preserve-metadata=entitlements --timestamp \
+    "$SPARKLE_VERSIONED/XPCServices/Downloader.xpc"
+codesign --force --sign "$IDENTITY_HASH" --options runtime --timestamp \
+    "$SPARKLE_VERSIONED/Autoupdate"
+codesign --force --sign "$IDENTITY_HASH" --options runtime --timestamp \
+    "$SPARKLE_VERSIONED/Updater.app"
+codesign --force --sign "$IDENTITY_HASH" --options runtime --timestamp "$SPARKLE_FRAMEWORK"
+codesign --force --sign "$IDENTITY_HASH" --options runtime --timestamp "$DIST_APP"
+
 # --------------------------------------------------------------------- verify
 echo "==> Verifying signature"
 codesign --verify --deep --strict --verbose=2 "$DIST_APP" \
     || die "code signature verification failed for $DIST_APP"
 
-if ! codesign -dv --verbose=4 "$DIST_APP" 2>&1 | grep -q "flags=.*runtime"; then
+SIGNATURE_DETAILS="$(codesign -dv --verbose=4 "$DIST_APP" 2>&1)"
+if ! grep -q "flags=.*runtime" <<<"$SIGNATURE_DETAILS"; then
     echo "warning: hardened runtime flag not reported by codesign; notarization may fail" >&2
 fi
 
